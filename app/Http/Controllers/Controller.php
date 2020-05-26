@@ -14,7 +14,7 @@ class Controller extends BaseController
     public static function done($data = [], $message = null) {
 
         return response([
-            'status' => "success",
+            'done' => "success",
             'message' => $message,
             'body' => $data,
         ], 200);
@@ -24,7 +24,7 @@ class Controller extends BaseController
     public static function error($message = null, $errors = [], $code = 400) {
 
         return response([
-            'status' => "error",
+            'done' => "error",
             'message' => $message,
             'errors' => $errors
         ], $code);
