@@ -1,0 +1,103 @@
+<style>
+
+</style>
+
+<template>
+    <div>
+        <div class="header bg-success" v-if="loading">
+
+            <div class="container">
+                
+                <b-navbar toggleable="lg" type="dark">
+
+                    <b-navbar-brand href="/" class="header-main-link">
+                        <img src="/favicon.ico" class="d-inline-block rounded align-top for-hover" width="30" alt="Kolgaev.ru">
+                        <span class="pl-1 d-none">Kolgaev.ru</span>
+                    </b-navbar-brand>
+
+                    <b-navbar-nav class="ml-auto" right v-if="!login">
+                        <b-nav-item href="#">Регистрация</b-nav-item>
+                        <user-login :login.sync="login" />
+                    </b-navbar-nav>
+
+                    <b-navbar-nav class="ml-auto" right v-if="login">
+                        <b-nav-item href="#">Выход</b-nav-item>
+                    </b-navbar-nav>
+
+                </b-navbar>
+
+            </div>
+
+        </div>
+
+        <div class="container my-4" v-if="loading">
+            <router-view />
+        </div>
+
+        <div class="global-loading" v-if="!loading">
+            <b-spinner variant="dark" type="grow"></b-spinner>
+        </div>
+
+    </div>
+</template>
+
+<script>
+    export default {
+
+        data() {
+            return {
+                loading: false, // Идентификатор глобальной загрузки певоначальных данных
+                token: false, // Токен пользователя
+                user: {}, // Данные пользователя
+                login: false, // Идентификатор авторизации
+            }
+        },
+
+        beforeMount() {
+
+            let token = localStorage.getItem('token');
+            
+            if (token) {
+                this.token = token ?? false;
+                window.axios.defaults.headers.common['Authorization'] = 'Bearer ' + this.token;
+
+                axios.post('/api/auth/user').then(({data}) => {
+                    this.checked(data);
+                }).catch(error => {
+                    this.checked();
+                });
+
+            }
+            else {
+                this.checked();
+            }
+
+        },
+
+        mounted() {
+
+        },
+
+        methods: {
+
+            checkToken() {
+
+            },
+
+            checked(data = false) {
+
+                if (data) {
+
+                    this.login = true;
+                    localStorage.setItem('user', JSON.stringify(data));
+
+                }
+
+                this.loading = true;
+
+            },
+
+        },
+
+    }
+</script>

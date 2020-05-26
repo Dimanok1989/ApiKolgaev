@@ -16,7 +16,7 @@ class AuthController extends Controller
     
     public static function login(Request $request) {
 
-        if (Auth::attempt($request->only('email', 'password')))
+        if (Auth::attempt(['email' => $request->email, 'password' => $request->password]))
             return self::loginDone();
 
         $login = $request->email;
@@ -28,8 +28,9 @@ class AuthController extends Controller
             return self::loginDone();
 
         return response([
-            'message' => "Неправильный логин или пароль",
-        ], 401);
+            'done' => "error",
+            'message' => "Неверный логин или пароль",
+        ]);
 
     }
 
@@ -39,7 +40,7 @@ class AuthController extends Controller
         $token = $user->createToken('app')->accessToken;
 
         return response([
-            'status' => "success",
+            'done' => "success",
             'token' => $token,
             'user' => $user,
         ]);

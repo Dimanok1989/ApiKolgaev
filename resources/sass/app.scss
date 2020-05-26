@@ -1,1 +1,27 @@
-//
+@import 'node_modules/bootstrap/scss/bootstrap';
+@import 'node_modules/bootstrap-vue/src/index.scss';
+
+.global-loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+}
+
+.for-hover { opacity: .8; }
+.for-hover:hover { opacity: 1; }
+
+button.close { outline: none; }
+
+.header-main-link {
+    font-weight: 900;
+}
+.header-main-link:hover {
+    img {
+        opacity: 1;
+    }
+}
