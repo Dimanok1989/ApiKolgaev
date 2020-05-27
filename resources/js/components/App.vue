@@ -16,12 +16,12 @@
                     </b-navbar-brand>
 
                     <b-navbar-nav class="ml-auto" right v-if="!login">
-                        <b-nav-item href="#">Регистрация</b-nav-item>
+                        <user-registration :login.sync="login" />
                         <user-login :login.sync="login" />
                     </b-navbar-nav>
 
                     <b-navbar-nav class="ml-auto" right v-if="login">
-                        <b-nav-item href="#">Выход</b-nav-item>
+                        <b-nav-item href="#" @click="logout">Выход</b-nav-item>
                     </b-navbar-nav>
 
                 </b-navbar>
@@ -58,6 +58,7 @@
             let token = localStorage.getItem('token');
             
             if (token) {
+                
                 this.token = token ?? false;
                 window.axios.defaults.headers.common['Authorization'] = 'Bearer ' + this.token;
 
@@ -80,10 +81,9 @@
 
         methods: {
 
-            checkToken() {
-
-            },
-
+            /**
+             * Завершение проверки данных пользователя
+             */
             checked(data = false) {
 
                 if (data) {
@@ -94,6 +94,23 @@
                 }
 
                 this.loading = true;
+
+            },
+
+            logout() {
+
+                axios.post('/api/auth/logout').then(({data}) => {
+
+                    console.log(data);
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
+
+                    this.login = false;
+                    window.location = '/';
+
+                }).catch(error => {
+                    console.log(error);
+                });
 
             },
 

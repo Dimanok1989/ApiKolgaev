@@ -9,6 +9,8 @@ trait HasUserRolesAndUserPermissions
 {
 
     /**
+     * Отношения roles
+     * 
      * @return mixed
      */
     public function roles() {
@@ -18,6 +20,8 @@ trait HasUserRolesAndUserPermissions
     }
 
     /**
+     * Отношения permissions
+     * 
      * @return mixed
      */
     public function permissions() {
@@ -34,18 +38,16 @@ trait HasUserRolesAndUserPermissions
      */
     public function hasRole(... $roles) {
 
-        foreach ($roles as $role) {
-            if ($this->roles->contains('slug', $role)) {
+        foreach ($roles as $role)
+            if ($this->roles->contains('slug', $role))
                 return true;
-            }
-        }
 
         return false;
 
     }
 
     /**
-     * Метод проверяет, содержат ли права пользователя заданное право, если да, то тогда он вернет true, а иначе false.
+     * Метод проверяет, содержат ли права пользователя заданное право
      * 
      * @param $permission
      * @return bool
@@ -57,7 +59,7 @@ trait HasUserRolesAndUserPermissions
     }
 
     /**
-     * Метод проверяет, содержат ли права пользователя заданное право, если да, то тогда он вернет true, а иначе false.
+     * Метод проверки привязки Роли с Правами пользователя или проверки содержания права пользователя заданное право
      * 
      * @param $permission
      * @return bool
@@ -69,25 +71,23 @@ trait HasUserRolesAndUserPermissions
     }
 
     /**
-     * Эта функция проверяет, привязана ли Роль с Правами к Пользователю. Метод hasPermissionTo() проверит эти два условия.
+     * Метод проверки привязки Роли с Правами пользователя
      * 
      * @param $permission
      * @return bool
      */
     public function hasPermissionThroughRole($permission) {
 
-        foreach ($permission->roles as $role){
-            if ($this->roles->contains($role)) {
+        foreach ($permission->roles as $role)
+            if ($this->roles->contains($role))
                 return true;
-            }
-        }
 
         return false;
 
     }
 
     /**
-     * Метод получает все Права на основе переданного массива
+     * Метод получает все Права пользователя на основе переданного массива
      * 
      * @param array $permissions
      * @return mixed
@@ -99,15 +99,16 @@ trait HasUserRolesAndUserPermissions
     }
 
     /**
+     * Метод получения всех Прав из базы данных на основе массива
+     * 
      * @param mixed ...$permissions
      * @return $this
      */
     public function givePermissionsTo(... $permissions) {
 
         $permissions = $this->getAllPermissions($permissions);
-        if ($permissions === null) {
+        if ($permissions === null)
             return $this;
-        }
 
         $this->permissions()->saveMany($permissions);
         return $this;
@@ -115,10 +116,12 @@ trait HasUserRolesAndUserPermissions
     }
 
     /**
+     * Удаление переданных Прав пользователя
+     * 
      * @param mixed ...$permissions
      * @return $this
      */
-    public function deletePermissions(... $permissions ) {
+    public function deletePermissions(... $permissions) {
 
         $permissions = $this->getAllPermissions($permissions);
         $this->permissions()->detach($permissions);
@@ -127,15 +130,16 @@ trait HasUserRolesAndUserPermissions
     }
 
     /**
+     * Метод удаляет все Права Пользователя, а затем переназначает предоставленные для него Права
+     * 
      * @param mixed ...$permissions
      * @return HasRolesAndPermissions
      */
-    public function refreshPermissions(... $permissions ) {
+    public function refreshPermissions(... $permissions) {
 
         $this->permissions()->detach();
         return $this->givePermissionsTo($permissions);
 
     }
-
 
 }

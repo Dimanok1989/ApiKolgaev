@@ -105,6 +105,8 @@
                     localStorage.setItem('token', data.token);
                     localStorage.setItem('user', JSON.stringify(data.user));
 
+                    window.axios.defaults.headers.common['Authorization'] = 'Bearer ' + data.token;
+
                     this.show = false;
                     this.$emit('update:login', true);
 

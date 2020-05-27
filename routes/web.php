@@ -17,6 +17,15 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+Route::get('/dev', function () {
+    $user = App\User::find(1);
+    // dd($user->isAdmin);
+    // dd($user->hasRole('web-developer')); // вернёт true
+    // dd($user->hasRole('project-manager'));// вернёт false
+    // dd($user->givePermissionsTo('manage-users'));
+    dd($user->hasPermissionTo('manage-users'));// вернёт true
+});
+
 Route::get('/{any}', function () {
     return view('spa');
 });

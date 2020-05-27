@@ -10,7 +10,7 @@ use App\Traits\HasUserRolesAndUserPermissions;
 
 class User extends Authenticatable
 {
-    use Notifiable, HasApiTokens, HasUserRolesAndUserPermissions;
+    use HasApiTokens, Notifiable, HasUserRolesAndUserPermissions;
 
     /**
      * The attributes that are mass assignable.

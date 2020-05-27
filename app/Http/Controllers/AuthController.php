@@ -47,7 +47,18 @@ class AuthController extends Controller
 
     }
 
-    public static function register(RegisterRequest $request) {
+    public static function logout(Request $request) {
+
+        Auth::user()->token()->revoke();
+
+        return response([
+            'done' => 'success',
+            'message' => 'Выход произведен',
+        ]);
+
+    }
+
+    public static function registration(RegisterRequest $request) {
 
         $user = User::create([
             'email' => $request->email,
@@ -57,7 +68,8 @@ class AuthController extends Controller
             'patronymic' => $request->patronymic,
         ]);
 
-        return $user;
+        Auth::attempt(['email' => $request->email, 'password' => $request->password]);
+        return self::loginDone();
 
     }
 
