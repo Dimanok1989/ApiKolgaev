@@ -38,6 +38,18 @@ trait HasUserRolesAndUserPermissions
      */
     public function hasRole(... $roles) {
 
+        return $this->hasRoles($roles);
+
+    }
+
+    /**
+     * Метод проверки ролей пользователя
+     * 
+     * @param array $roles
+     * @return bool
+     */
+    public function hasRoles(array $roles) {
+
         foreach ($roles as $role)
             if ($this->roles->contains('slug', $role))
                 return true;
@@ -47,39 +59,20 @@ trait HasUserRolesAndUserPermissions
     }
 
     /**
-     * Метод проверяет, содержат ли права пользователя заданное право
+     * Метод проверки прав по роли пользователя
      * 
-     * @param $permission
+     * @param array $permission Наименование права
      * @return bool
      */
-    public function hasPermission($permission) {
+    public function hasPermissionViaRole(array $permissions) {
 
-        return (bool) $this->permissions->where('slug', $permission)->count();
+        $roles = [];
+        foreach ($this->roles as $role)
+            foreach (UserRole::find($role->id)->permissions as $permission)
+                $roles[] = $permission;
 
-    }
-
-    /**
-     * Метод проверки привязки Роли с Правами пользователя или проверки содержания права пользователя заданное право
-     * 
-     * @param $permission
-     * @return bool
-     */
-    public function hasPermissionTo($permission) {
-
-        return $this->hasPermissionThroughRole($permission) || $this->hasPermission($permission);
-
-    }
-
-    /**
-     * Метод проверки привязки Роли с Правами пользователя
-     * 
-     * @param $permission
-     * @return bool
-     */
-    public function hasPermissionThroughRole($permission) {
-
-        foreach ($permission->roles as $role)
-            if ($this->roles->contains($role))
+        foreach ($roles as $role)
+            if (in_array($role->slug, $permissions))
                 return true;
 
         return false;
@@ -107,6 +100,7 @@ trait HasUserRolesAndUserPermissions
     public function givePermissionsTo(... $permissions) {
 
         $permissions = $this->getAllPermissions($permissions);
+        
         if ($permissions === null)
             return $this;
 

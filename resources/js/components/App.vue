@@ -30,8 +30,8 @@
 
         </div>
 
-        <div class="container my-4" v-if="loading">
-            <router-view />
+        <div class="container my-4 p-1" v-if="loading">
+            <router-view :login="login" :user="user" />
         </div>
 
         <div class="global-loading" v-if="!loading">
@@ -46,6 +46,7 @@
 
         data() {
             return {
+                display404: false,
                 loading: false, // Идентификатор глобальной загрузки певоначальных данных
                 token: false, // Токен пользователя
                 user: {}, // Данные пользователя
@@ -89,6 +90,8 @@
                 if (data) {
 
                     this.login = true;
+                    
+                    this.user = data;
                     localStorage.setItem('user', JSON.stringify(data));
 
                 }

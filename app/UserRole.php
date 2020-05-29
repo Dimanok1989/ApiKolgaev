@@ -8,9 +8,10 @@ use App\UserPermission;
 class UserRole extends Model
 {
     
-    public function permissions()
-    {
+    public function permissions() {
+
         return $this->belongsToMany(UserPermission::class, 'user_roles_user_permissions');
+
     }
 
 }

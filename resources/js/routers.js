@@ -10,6 +10,7 @@
 export const routers = [
     { path: '/', name: 'welcome', component: Welcome },
     { path: '/main', name: 'main', component: Main },
+    { path: '/disk', name: 'disk', component: Disk },
     // { path: '/mail', component: Mail },
     // { path: '/fuel', name: 'fuel', component: Fuel },
     { path: '*', component: NotFound }

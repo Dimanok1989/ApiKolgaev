@@ -14137,6 +14137,10 @@ input[type=color].form-control:disabled {
   opacity: 1;
 }
 
+.cursor-pointer {
+  cursor: pointer;
+}
+
 button.close {
   outline: none;
 }

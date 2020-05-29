@@ -22,6 +22,7 @@ files.keys().forEach(component => {
 const routers = [
     { path: '/', name: 'welcome', component: components.Welcome },
     { path: '/main', name: 'main', component: components.Main },
+    { path: '/disk', name: 'disk', component: components.Disk },
     { path: '*', component: components.NotFound }
 ];
 
