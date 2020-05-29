@@ -1,6 +1,8 @@
 <style scoped>
     #users-list button {
         outline: none;
+        border: none;
+        border-radius: 5px;
     }
     #users-list button.active {
         background-color: #c6d3ff;
@@ -37,11 +39,12 @@
             <input type="file" class="d-none" id="input-upload-files" name="files" multiple="true" @change="startUploadFiles" />
 
             <b-card-text class="mt-3">
-                <b-row>
-                    <b-col sm="4">
+                <div class="d-flex justify-content-start align-items-start">
+                    <div>
                         <b-list-group id="users-list" flush>
+                            
                             <b-list-group-item
-                                class="d-flex align-items-center py-1 px-3"
+                                class="d-flex align-items-center p-2"
                                 v-for="user in users"
                                 :key="user.id"
                                 @click="getUserFiles(user.id)"
@@ -50,30 +53,41 @@
                                 :disabled="loadingUser"
                             >
 
-                                <b-avatar class="mr-3" :text="String(user.name)[0]+(user.surname ? String(user.surname)[0] : '')"></b-avatar>
+                                <b-overlay :show="isBusy && user.id == selectedUser" rounded="sm" variant="white" opacity="0.7" spinner-type="grow" spinner-small spinner-variant="dark">
 
-                                <span class="mr-auto">{{ user.name }}{{ user.surname ? " "+user.surname : "" }}</span>
+                                    <b-avatar :text="String(user.name)[0]+(user.surname ? String(user.surname)[0] : '')"></b-avatar>
 
-                                <b-spinner type="grow" label="Spinning" small v-if="user.id == selectedUser && loadingUser ? true : false"></b-spinner>
+                                    <!-- <span class="mr-auto">{{ user.name }}{{ user.surname ? " "+user.surname : "" }}</span> -->
+
+                                    <!-- <b-spinner type="grow" label="Spinning" small v-if="user.id == selectedUser && loadingUser ? true : false"></b-spinner> -->
+
+                                </b-overlay>
 
                             </b-list-group-item>
+                            
                         </b-list-group>
-                    </b-col>
-                    <b-col sm="8">
+                    </div>
+                    <div class="p-2"></div>
+                    <div class="flex-grow-1">
                         <b-overlay :show="isBusy" rounded="sm" variant="white" opacity="0.7">
+
+                            <template v-slot:overlay>
+                                <div></div>
+                            </template>
+
                             <div>
                                 <b-link @click="getUserFiles(selectedUser)">Файлы</b-link>
-                                <span v-for="path in paths" :key="path">
+                                <span v-for="path in paths" :key="path.id">
                                     <b-icon-chevron-right/>
-                                    <b-link @click="openOneFolder(path)">{{ path }}</b-link>
+                                    <b-link @click="openFolder(path.id)">{{ path.name }}</b-link>
                                 </span>
                             </div>
 
-                            <b-table class="files-table mt-3" 
+                            <b-table class="files-table mt-2" 
                                 small
                                 :items="files"
                                 hover
-                                striped
+                                striped2
                                 :fields="fields"
                                 responsive
                                 stacked="sm"
@@ -85,8 +99,9 @@
                             >
 
                                 <template v-slot:cell(name)="data">
-                                    <b-link @click="openFolder(data.item.path)" v-if="data.item.ext == 'Папка'">{{ data.value }}</b-link>
-                                    <b-link :href="data.item.link" v-else :download="data.value">{{ data.value }}</b-link>
+                                    <b-link @click="openFolder(data.item.id)" v-if="data.item.ext == 'Папка'">{{ data.value }}</b-link>
+                                    <span v-else>{{ data.value }}</span>
+                                    <!-- <b-link :href="data.item.link" v-else :download="data.value">{{ data.value }}</b-link> -->
                                 </template>
 
                                 <template v-slot:head(selected)>
@@ -102,7 +117,7 @@
                                             />
                                             <b-icon-check-square
                                                 @click="selectedRows"
-                                                v-if="selected.length == files.length"
+                                                v-if="selected.length == files.length && files.length != 0"
                                             />
                                         </span>
                                     </div>
@@ -124,8 +139,8 @@
                                 <div class="text-center text-muted my-5">Файлов нет</div>
                             </div>
                         </b-overlay>
-                    </b-col>
-                </b-row>
+                    </div>
+                </div>
             </b-card-text>
         </b-card>
 
@@ -168,7 +183,7 @@
                 selected: [], // Выбранные строки таблицы
 
                 paths: [], // Массив пути до подкаталога
-                cd: "", // Путь до подкаталога
+                cd: 0, // Выбранный каталог
 
                 filesUploadList: [], // Список файлов для загрузки
                 filesUploaded: [], // Список загуженных файлов
@@ -204,13 +219,9 @@
             async getUsersList() {
 
                 await axios.get('/api/disk/getUsersList').then(({data}) => {
-
                     this.users = data.users;
-
                 }).catch(error => {
-
-                    console.log(error.response.data, error.response);
-
+                    console.log(error.response);
                 });
 
             },
@@ -218,7 +229,7 @@
             /**
              * Получение списка файлов пользователя
              */
-            async getUserFiles(id = 0, path = false) {
+            async getUserFiles(id = 0, folder = 0) {
 
                 if (!id)
                     return false;
@@ -226,12 +237,12 @@
                 this.selectedUser = id;
                 this.loadingUser = true;
                 this.isBusy = true;
+                this.cd = folder;
 
-                await axios.post('/api/disk/getUserFiles', {id, path}).then(({data}) => {
+                await axios.post('/api/disk/getUserFiles', {id, folder}).then(({data}) => {
 
                     this.files = [];
                     this.paths = data.paths;
-                    this.cd = data.cd;
 
                     data.dirs.forEach(dir => {                  
                         this.files.push(dir);
@@ -243,54 +254,59 @@
 
                 }).catch(error => {
 
-                    console.log(error.response.data, error.response);
+                    console.log(error.response);
 
                 }).then(() => {
-
                     this.loadingUser = false;
                     this.isBusy = false;
-
                 });
 
             },
 
+            /**
+             * Метод открытия подкаталога
+             */
+            openFolder(folder = 0) {
+                this.getUserFiles(this.selectedUser, folder);
+            },
+
+            /**
+             * Метод обработки кнопки выбора всех строк
+             */
             selectedRows() {
                 if (this.selected.length == 0)
                     this.selectAllRows();
                 else
                     this.clearSelected();
             },
+            /** Выбор одной строки с файллом */
             onRowSelected(items) {
                 this.selected = items;
             },
+            /** Выбор всех строк с файлами */
             selectAllRows() {
                 this.$refs.filetable.selectAllRows();
             },
+            /** Снятие выбора всех строк с файлами */
             clearSelected() {
                 this.$refs.filetable.clearSelected();
             },
 
-            openFolder(path = false) {
-                this.getUserFiles(this.selectedUser, path);
-            },
-            openOneFolder(pathpart = false) {
-
-                let path = "";
-                this.paths.forEach(part => {
-
-                    path += "/" + part;
-
-                    if (part == pathpart)
-                        return this.openFolder(path);
-
-                });
-
-                return this.openFolder(path);
-
-            },
-
+            /**
+             * Метод открытия формы выбора файлов
+             */
             openFileInput() {
                 document.getElementById('input-upload-files').click();
+            },
+
+            /**
+             * Обнуление сектора прогресса загрузки файлов
+             */
+            doneUpload() {
+                this.doneUploadFlag = true;
+                this.filesUploadList = [];
+                this.filesUploaded = [];
+                this.progress = 0;
             },
 
             async startUploadFiles() {
@@ -299,8 +315,6 @@
 
                 let files = Array.from(event.target.files);
                 this.filesUploadList = files.slice();
-                
-                console.log(files, this.filesUploadList);
 
                 for (let file in files)
                     await this.uploadFile(files[file]);
@@ -326,7 +340,7 @@
 
                     }
 
-                }).then(response => {
+                }).then(({data}) => {
 
                     this.fileProgress = 0;
                     this.fileCurrent = '';
@@ -334,7 +348,7 @@
 
                     if (this.filesUploaded.length == this.filesUploadList.length) {
                         document.getElementById('input-upload-files').value = '';
-                        this.openOneFolder();
+                        this.openFolder(data.file.in_dir);
                         this.doneUploadFlag = false;
                     }
 
@@ -342,13 +356,6 @@
                     console.log(error.response);
                 });
 
-            },
-
-            doneUpload() {
-                this.doneUploadFlag = true;
-                this.filesUploadList = [];
-                this.filesUploaded = [];
-                this.progress = 0;
             },
 
         },

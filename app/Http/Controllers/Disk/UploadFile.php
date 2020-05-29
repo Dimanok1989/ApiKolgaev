@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
+use App\DiskFile;
+
 class UploadFile extends Controller
 {
     
@@ -14,36 +16,36 @@ class UploadFile extends Controller
         if (!$request->user)
             return parent::error("Нет идентификатора", 400);
 
-        // Путь до каталога с файлами пользователя
-        $dir = "drive/" . $request->user;
-        
-        // Путь до подкаталога
-        if ($request->cd)
-            $dir .= $request->cd;
+        $dir = "drive/" . date("Y/m/d"); // Путь до файла
 
-        $file = $request->file('files');
+        $file = $request->file('files'); // Объект с файлом
 
-        $name = $file->getClientOriginalName();
-        $size = parent::formatSize($file->getSize());
-        $ext = $file->getClientOriginalExtension();
+        $newfile = new DiskFile; // Создание нового экземпляра строки бд
+        $newfile->user = $request->user; // Принадлежность файла к пользователю
+        $newfile->path = $dir; // Путь до каталога с файлом
+        $newfile->name = $file->getClientOriginalName(); // Имя файла для вывода
+        $newfile->ext = $file->getClientOriginalExtension(); // Расширение файла
+		$newfile->mime_type = $file->getClientMimeType(); // Тип файла
+        $newfile->size = $file->getSize(); // Размер файла в байтах
+        $newfile->in_dir = (int) $request->cd; // Принадлежность к каталогу
 
-        $path_parts = pathinfo($name);
-        $clearname = $path_parts['filename'];
+        $newfile->real_name = md5($newfile->name) . "." . $newfile->ext; // Имя файла для хранения
 
         $count = 1;
-		while (Storage::disk('public')->exists("{$dir}/{$name}")) {
-            $name = $clearname . " (" . $count . ")." . $ext;
+		while (Storage::disk('local')->exists("{$dir}/{$newfile->real_name}")) {
+            $newfile->real_name = md5($newfile->real_name . $count) . "." . $newfile->ext;
             $count++;
 		}
 
-        $path = $file->storeAs($dir, $name, 'public');
+        if (!$file->storeAs($dir, $newfile->real_name, 'local'))
+            return parent::error("Файл не загружен", 400);
+
+        $newfile->save();
+
+        $newfile->size_disp = parent::formatSize($newfile->size);
 
         return response([
-            'path' => public_path($path),
-            'name' => $name,
-            'size' => $size,
-            'ext' => $ext,
-            'link' => Storage::disk('public')->url("{$dir}/{$name}"),
+            'file' => $newfile,
         ]);
 
     }

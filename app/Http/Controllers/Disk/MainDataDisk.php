@@ -7,8 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 use App\User;
-use App\UserRole;
-use App\UserPermission;
+use App\DiskFile;
 
 class MainDataDisk extends Controller
 {
@@ -38,63 +37,62 @@ class MainDataDisk extends Controller
         if (!$request->id)
             return parent::error("Нет идентификатора", 400);
 
-        // Путь до каталога с файлами пользователя
-        $dir = "drive/" . $request->id;
-        $full = public_path();
+        $in_dir = (int) $request->folder;
 
-        // Путь до выбранного каталога
-        $cd = "";
+        $dirs = []; // Список каталогов
+        $files = []; // Список файлов
 
-        if ($request->path)
-            $cd .= str_replace($dir, "", $request->path);
+        $data = DiskFile::where([
+            ['in_dir', $in_dir],
+            ['user', $request->id]
+        ])
+        ->orderBy('name')->get();
 
-        // Полный путь
-        $path = $dir . $cd;
+        foreach ($data as $file) {
 
+            if (!$file->is_dir) {
 
-        // Поиск каталогов в дирректории
-        $dirs = [];
-        foreach (Storage::disk('public')->directories($path) as $directorie) {
+                $file->size = parent::formatSize($file->size);
 
-            $dirs[] = [
-                'name' => basename($directorie),
-                'path' => $directorie,
-                'ext' => "Папка",
-                'size' => "",
-                'time' => date("d.m.Y H:i:s", Storage::disk('public')->lastModified($directorie)),
-                'user' => $request->user()->id,
-            ];
+                $time = Storage::disk('local')->lastModified($file->path . "/" . $file->real_name);
+                $file->time = date("d.m.Y H:i:s", $time);
+
+                $files[] = $file;
+
+            }
+            else {
+
+                $file->size = null;
+                $file->ext = "Папка";
+
+                $file->time = date("d.m.Y H:i:s", strtotime($file->created_at));
+
+                $dirs[] = $file;
+
+            }
 
         }
 
-        // Поиск файлов в дирректории
-        $files = [];
-        foreach (Storage::disk('public')->files($path) as $file) {
+        // Поиск пути до каталога
+        $paths = [];
+        while ($in_dir) {
 
-            $info = new \SplFileInfo(public_path("storage/" . $file));
+            $path = DiskFile::find($in_dir);
 
-            $files[] = [
-                'name' => basename($file),
-                'path' => $file,
-                'ext' => $info->getExtension(),
-                'size' => parent::formatSize($info->getSize()),
-                'time' => date("d.m.Y H:i:s", Storage::disk('public')->lastModified($file)),
-                'link' => Storage::disk('public')->url($file),
-                'user' => $request->user()->id,
+            $paths[] = [
+                'id' => $path->id,
+                'name' => $path->name,
             ];
             
-        }
+            $in_dir = (int) $path->in_dir;
 
-        $paths = [];
-        foreach(explode("/", str_replace($dir, "", $path)) as $p)
-            if ($p != "")
-                $paths[] = $p;
+        }
 
         return response([
             'dirs' => $dirs,
             'files' => $files,
-            'cd' => $cd,
-            'paths' => $paths,
+            'cd' => "",
+            'paths' => array_reverse($paths),
         ]);
 
     }

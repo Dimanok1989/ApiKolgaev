@@ -110,7 +110,7 @@
                     this.show = false;
                     this.$emit('update:login', true);
 
-                }).catch(error => console.log(error));
+                }).catch(error => console.log(error.response));
 
             },
 

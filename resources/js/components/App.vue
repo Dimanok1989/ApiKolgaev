@@ -95,6 +95,10 @@
                     localStorage.setItem('user', JSON.stringify(data));
 
                 }
+                else {
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
+                }
 
                 this.loading = true;
 
