@@ -23,7 +23,8 @@ class UploadFile extends Controller
         $newfile = new DiskFile; // Создание нового экземпляра строки бд
         $newfile->user = $request->user; // Принадлежность файла к пользователю
         $newfile->path = $dir; // Путь до каталога с файлом
-        $newfile->name = $file->getClientOriginalName(); // Имя файла для вывода
+        // $newfile->name = $file->getClientOriginalName(); // Имя файла для вывода
+        $newfile->name = basename($file->getClientOriginalName(), '.' . $file->getClientOriginalExtension());
         $newfile->ext = $file->getClientOriginalExtension(); // Расширение файла
 		$newfile->mime_type = $file->getClientMimeType(); // Тип файла
         $newfile->size = $file->getSize(); // Размер файла в байтах

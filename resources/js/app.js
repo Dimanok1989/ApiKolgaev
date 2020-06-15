@@ -31,6 +31,9 @@ const router = new VueRouter({
 	routes: routers,    
 });
 
+// Шина событий
+Vue.prototype.$eventBus = new Vue();
+
 const app = new Vue({
     el: '#app',
     router,

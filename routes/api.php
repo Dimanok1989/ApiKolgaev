@@ -35,4 +35,7 @@ Route::group([
     Route::match(['get','post'], '/getUsersList', 'Disk\MainDataDisk@getUsersList');
     Route::match(['get','post'], '/getUserFiles', 'Disk\MainDataDisk@getUserFiles');
     Route::post('/uploadFile', 'Disk\UploadFile@upload');
+    Route::post('/mkdir', 'Disk\MainDataDisk@mkdir');
+    Route::post('/rename', 'Disk\MainDataDisk@rename');
+    Route::post('/download', 'Disk\DownloadFile@download');
 });

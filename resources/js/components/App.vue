@@ -1,10 +1,13 @@
 <style>
-
+    .bg-my-header {
+        background: #242835;
+        color: #5e80e4;
+    }
 </style>
 
 <template>
     <div>
-        <div class="header bg-success" v-if="loading">
+        <div class="header bg-my-header" v-if="loading">
 
             <div class="container">
                 
@@ -52,6 +55,14 @@
                 user: {}, // Данные пользователя
                 login: false, // Идентификатор авторизации
             }
+        },
+
+        created() {
+            this.$eventBus.$on('error-catch', this.errorCatch);
+        },
+
+        beforeDestroy(){
+            this.$eventBus.$off('error-catch');
         },
 
         beforeMount() {
@@ -119,6 +130,10 @@
                     console.log(error);
                 });
 
+            },
+
+            errorCatch(err) {
+                console.log(err);
             },
 
         },

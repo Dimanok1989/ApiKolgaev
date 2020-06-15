@@ -10,4 +10,14 @@
 
 <script>
 
+    export default {
+
+        props: {
+            login: {
+                default: false
+            },
+        },
+
+    }
+
 </script>

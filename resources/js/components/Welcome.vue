@@ -39,6 +39,12 @@
 <script>
     export default {
 
+        props: {
+            login: {
+                default: false
+            },
+        },
+
         data() {
             return {
                 
@@ -46,6 +52,7 @@
         },
 
         beforeMount() {
+
 
             let head = document.querySelector('head'),
                 link = document.createElement("link");
@@ -58,6 +65,9 @@
         },
 
         mounted() {
+
+            console.log(this.login);
+
 
         },
 

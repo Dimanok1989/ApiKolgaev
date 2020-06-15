@@ -50,17 +50,7 @@ class MainDataDisk extends Controller
 
         foreach ($data as $file) {
 
-            if (!$file->is_dir) {
-
-                $file->size = parent::formatSize($file->size);
-
-                $time = Storage::disk('local')->lastModified($file->path . "/" . $file->real_name);
-                $file->time = date("d.m.Y H:i:s", $time);
-
-                $files[] = $file;
-
-            }
-            else {
+            if ($file->is_dir) {
 
                 $file->size = null;
                 $file->ext = "Папка";
@@ -68,6 +58,16 @@ class MainDataDisk extends Controller
                 $file->time = date("d.m.Y H:i:s", strtotime($file->created_at));
 
                 $dirs[] = $file;
+
+            }
+            else {
+
+                $file->size = parent::formatSize($file->size);
+
+                $time = Storage::disk('local')->lastModified($file->path . "/" . $file->real_name);
+                $file->time = date("d.m.Y H:i:s", $time);
+
+                $files[] = $file;
 
             }
 
@@ -93,6 +93,57 @@ class MainDataDisk extends Controller
             'files' => $files,
             'cd' => "",
             'paths' => array_reverse($paths),
+        ]);
+
+    }
+
+    /**
+     * Создание нового каталога
+     */
+    public static function mkdir(Request $request) {
+
+        $file = new DiskFile;
+
+        $file->name = "Новая папка";
+        $file->user = $request->user()->id;
+        $file->is_dir = 1;
+        $file->in_dir = (int) $request->cd;
+
+        $file->save();
+
+        $file->ext = "Папка";
+        $file->time = date("d.m.Y H:i:s");
+
+        return response([
+            'file' => $file,
+        ]);
+
+    }
+
+    /**
+     * Переименовывание файла
+     */
+    public static function rename(Request $request) {
+
+        if (!$request->name)
+            return parent::error("Пустое имя файла");
+
+        // if (preg_match("/(^[a-zA-Z0-9]+([a-zA-Zа-яА-Я\_0-9\.-]*))$/", $request->name))
+        //     return parent::error("Недопустимое имя файла");
+        
+        $file = DiskFile::find($request->id);
+
+        if (!$file)
+            return parent::error("Файл не найден");
+
+        if ($file->user != $request->user()->id)
+            return parent::error("Этот файл нельзя переименовать");
+
+        $file->name = $request->name;
+        $file->save();
+        
+        return response([
+            $file
         ]);
 
     }
