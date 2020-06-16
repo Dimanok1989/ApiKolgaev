@@ -30,17 +30,7 @@
                 <b-icon-folder-plus @click="mkdir" class="for-hover cursor-pointer ml-2" v-if="user.id == selectedUser" />
             </b-card-title>
 
-            <b-card-text class="mt-3" v-if="doneUploadFlag">
-                <div class="mb-1">
-                    <span>Файлов для загрузки:</span>
-                    <strong>{{ filesUploadList.length }}/{{ filesUploaded.length }}</strong>
-                    <span class="ml-2"><i>{{ fileCurrent }}</i> <b v-if="fileProgress">{{ fileProgress }}%</b></span>
-                </div>
-                <b-progress height="20px" :value="progress" show-progress class="mb-2"></b-progress>
-                <hr>
-            </b-card-text>
-
-            <input type="file" class="d-none" id="input-upload-files" name="files" multiple="true" @change="startUploadFiles" />
+            <upload-files-progress :openUpload.sync="openUpload" :user="user" :cd="cd" />
 
             <b-card-text class="mt-3">
                 <div class="d-flex justify-content-start align-items-start">
@@ -93,7 +83,8 @@
                             </template>
 
                             <div>
-                                <b-icon-folder-fill class="mr-1 text-muted"/>
+                                <fa-icon :icon="['fas','folder-open']" class="mr-1 text-muted" />
+                                <!-- <b-icon-folder-fill class="mr-1 text-muted"/> -->
                                 <b-link @click="getUserFiles(selectedUser)">Файлы</b-link>
                                 <span v-for="path in paths" :key="path.id">
                                     <b-icon-chevron-right/>
@@ -118,7 +109,8 @@
                             >
 
                                 <template v-slot:cell(name)="data">
-                                    <b-icon :icon="getIconName(data.item.ext)"></b-icon>
+                                    <fa-icon :icon="['far', getIconName(data.item.ext)]" class="mr-1 text-muted" />
+                                    <!-- <b-icon :icon="getIconName(data.item.ext)"></b-icon> -->
                                     <b-link @click="openFolder(data.item.id)" v-if="data.item.ext == 'Папка'">{{ data.value }}</b-link>
                                     <span v-else>{{ data.value }}</span>
                                     <!-- <b-link :href="data.item.link" v-else :download="data.value">{{ data.value }}</b-link> -->
@@ -230,12 +222,7 @@
 
                 mkdirWait: false, // Идентификатор ожидания создания папки
 
-                filesUploadList: [], // Список файлов для загрузки
-                filesUploaded: [], // Список загуженных файлов
-                fileCurrent: "", // Наименование файла текущего в загрузке
-                fileProgress: 0, // Процент загрузки файла
-                progress: 0, // Общий процент загрузки файлов
-                doneUploadFlag: false, // Завершение загрузки
+                openUpload: false, // Открытие окна прогресса загрузки файлов
 
                 renameModal: false, // Открытие диалогового окна переименовки файла
                 selectedFile: {}, // Выбранный файл
@@ -253,7 +240,17 @@
 
         },
 
+        created() {
+            this.$eventBus.$on('sort-files', this.sortFiles);
+        },
+
+        beforeDestroy(){
+            this.$eventBus.$off('sort-files');
+        },
+
         async mounted() {
+
+            // this.openUpload = true;
 
             // window.onpopstate = event => {
             //     console.log(event);
@@ -343,28 +340,49 @@
              */
             getIconName(ext = "") {
 
-                let icon = "file-earmark";
-
                 if (ext == 'Папка')
                     return "folder";
 
+                let icons = [
+                    ['image','file-image'],
+                    ['film','file-video'],
+                    ['file-zip','file-archive'],
+                    ['file-text','file-text'],
+                    ['file-richtext','file-word'],
+                    ['file-spreadsheet','file-excel'],
+                    ['music-note','file-audio'],
+                    [false,'file-pdf'],
+                    [false,'file-code'],
+                ];
+
+                // Для библиотеки бутстрап
+                let exts = [
+                    ['JPG','JPEG'],
+                    ['MOV','AVI','MP4','WEBM'],
+                    ['RAR','ZIP','7Z','XZ','BZ2'],
+                    ['TXT'],
+                    ['RTF','DOC','DOCX'],
+                    ['XLS','CSV'],
+                    ['MP3','WAV','OGG'],
+                    ['PDF'],
+                    ['PHP','HTML','XML','JS','VUE'],
+                ];
+
+                let icon = ['file','file'];
                 ext = String(ext).toUpperCase();
 
-                let exts = {
-                    image: ['JPG','JPEG'],
-                    film: ['MOV','AVI','MP4','WEBM']
-                };
+                exts.forEach((item,i,arr) => {
 
-                for (var key in exts) {
-
-                    exts[key].forEach(row => {
+                    item.forEach(row => {
                         if (row == ext)
-                            icon = key;                        
+                            icon = icons[i];                        
                     });
                     
-                }
+                });
 
-                return icon;
+                let libr = 1;
+
+                return icon[libr] ? icon[libr] : 'file';
 
             },
 
@@ -398,60 +416,34 @@
             },
 
             /**
-             * Обнуление сектора прогресса загрузки файлов
+             * Сортировка списка файлов по имени
              */
-            doneUpload() {
-                this.doneUploadFlag = true;
-                this.filesUploadList = [];
-                this.filesUploaded = [];
-                this.progress = 0;
-            },
+            sortFiles(file = false) {
 
-            async startUploadFiles() {
+                if (file)
+                    this.files.push(file);
 
-                this.doneUpload();
+                this.files.sort(function(a, b) {
 
-                let files = Array.from(event.target.files);
-                this.filesUploadList = files.slice();
+                    let nameA = a.name.toLowerCase(),
+                        nameB = b.name.toLowerCase();
+                        
+                    if (nameA < nameB)
+                        return -1
+                    if (nameA > nameB)
+                        return 1
+                    return 0
 
-                for (let file in files)
-                    await this.uploadFile(files[file]);
+                });
 
-            },
+                this.files.sort(function(a, b) {
 
-            async uploadFile(file) {
+                    if (a.is_dir < b.is_dir)
+                        return 1
+                    if (a.is_dir > b.is_dir)
+                        return -1
+                    return 0
 
-                let form = new FormData();
-                form.append('files', file);
-                form.append('user', this.user.id);
-                form.append('cd', this.cd);
-
-                await axios.post('/api/disk/uploadFile', form, {
-
-                    onUploadProgress: (itemUpload) => {
-
-                        this.fileProgress = Math.round((itemUpload.loaded / itemUpload.total) * 100);
-
-                        this.progress = Math.round(((this.filesUploaded.length * 100) + this.fileProgress) / this.filesUploadList.length, 1);
-
-                        this.fileCurrent = file.name;
-
-                    }
-
-                }).then(({data}) => {
-
-                    this.fileProgress = 0;
-                    this.fileCurrent = '';
-                    this.filesUploaded.push(file);
-
-                    if (this.filesUploaded.length == this.filesUploadList.length) {
-                        document.getElementById('input-upload-files').value = '';
-                        this.openFolder(data.file.in_dir);
-                        this.doneUploadFlag = false;
-                    }
-
-                }).catch(error => {
-                    this.$eventBus.$emit('error-catch', error.response);
                 });
 
             },
@@ -470,29 +462,7 @@
                     // Добавление новой папки в список файлов
                     this.files.push(data.file);
 
-                    // Сортировка списка файлов по имени
-                    this.files.sort(function(a, b) {
-
-                        let nameA = a.name.toLowerCase(),
-                            nameB = b.name.toLowerCase();
-                        
-                        if (nameA < nameB)
-                            return -1
-                        if (nameA > nameB)
-                            return 1
-                        return 0
-
-                    });
-
-                    this.files.sort(function(a, b) {
-
-                        if (a.is_dir < b.is_dir)
-                            return 1
-                        if (a.is_dir > b.is_dir)
-                            return -1
-                        return 0
-
-                    });
+                    this.sortFiles();                    
 
                 }).catch(error => {
                     this.$eventBus.$emit('error-catch', error.response);
