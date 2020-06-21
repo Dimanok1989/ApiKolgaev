@@ -26,7 +26,7 @@
 
             <b-card-title>
                 <span>Наше хранилище</span>
-                <b-icon-cloud-upload @click="openFileInput" class="for-hover cursor-pointer ml-2" v-if="user.id == selectedUser" />
+                <b-icon-cloud-upload @click="openFileInput" class="for-hover cursor-pointer ml-2" v-if="user.id == selectedUser && uploadAccess" />
                 <b-icon-folder-plus @click="mkdir" class="for-hover cursor-pointer ml-2" v-if="user.id == selectedUser" />
             </b-card-title>
 
@@ -199,6 +199,7 @@
             return {
 
                 loading: false, // Глобальная загрузка страницы
+                uploadAccess: true, // Вывод кнопки загрузки файлов
 
                 users: [], // Список пользователей
                 selectedUser: false, // Выбранный пользователь
@@ -250,7 +251,11 @@
 
         async mounted() {
 
-            // this.openUpload = true;
+            // Проверка поддержки браузера
+            if (!window.File || !window.FileReader || !window.FileList || !window.Blob) {
+                console.error("Браузер не поддерживает чтение файлов или доступ запрещен");
+                this.uploadAccess = false;
+            }
 
             // window.onpopstate = event => {
             //     console.log(event);
@@ -358,7 +363,7 @@
                 // Для библиотеки бутстрап
                 let exts = [
                     ['JPG','JPEG'],
-                    ['MOV','AVI','MP4','WEBM'],
+                    ['MOV','AVI','MP4','WEBM','MKV','M4V'],
                     ['RAR','ZIP','7Z','XZ','BZ2'],
                     ['TXT'],
                     ['RTF','DOC','DOCX'],

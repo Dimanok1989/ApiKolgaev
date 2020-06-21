@@ -64,8 +64,12 @@ class MainDataDisk extends Controller
 
                 $file->size = parent::formatSize($file->size);
 
-                $time = Storage::disk('local')->lastModified($file->path . "/" . $file->real_name);
-                $file->time = date("d.m.Y H:i:s", $time);
+                if (Storage::disk('local')->exists($file->path . "/" . $file->real_name))
+                    $time = Storage::disk('local')->lastModified($file->path . "/" . $file->real_name);
+                else
+                    $time = false;
+
+                $file->time = $time ? date("d.m.Y H:i:s", $time) : false;
 
                 $files[] = $file;
 
