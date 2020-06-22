@@ -40,10 +40,10 @@
 
             <hr v-if="false">
 
-            <div v-for="(file, index) in filesUploadList" :key="file.size">
+            <div v-for="(file, index) in filesUploadList" :key="index">
                 <div class="d-flex justify-content-between align-items-center">
                     <div class="text-nowrap text-truncate">
-                        <strong>{{ (index + 1) }}</strong>
+                        <strong class="mr-1">{{ (index + 1) }}</strong>
                         <span>{{ file.name }}</span>
                     </div>
                     <div>
@@ -80,7 +80,7 @@ export default {
             fileProgress: 0, // Процент загрузки файла
             progress: 0, // Общий процент загрузки файлов
             doneUploadFlag: false, // Завершение загрузки
-            chunk: 3000000, // Размер загружаемой части файла
+            chunk: 5242880, // Размер загружаемой части файла
             offset: 0, // Текущая позиция чтения файла
             path: false, // Путь до папки с файлом
         }
@@ -96,33 +96,41 @@ export default {
             this.filesUploaded = []; // Список загуженных файлов
             this.fileCurrent = -1; // Идентификатор файла текущей загрузки
             this.fileProgress = 0; // Процент загрузки файла
-            this.progress = 0; // Общий процент загрузки файлов
-            this.doneUploadFlag = false; // Завершение загрузки
+            this.progress = 0; // Общий процент выполнения
+            this.doneUploadFlag = false; // Обнуление завершенной ранее загрузки
 
             let files = Array.from(event.target.files);
-            this.filesUploadList = files.slice();
 
             // Открытие диалогового окна с процессом загрузки
             this.$emit('update:openUpload', true);
 
             // Добавление переменных для файлов
-            this.filesUploadList.forEach((file,index) => {
-                this.filesUploadList[index].progress = 0;
-                this.filesUploadList[index].status = 0;
-                this.filesUploadList[index].error = "Неизвестная ошибка";
-            });
+            for (let index in files) {
+
+                let file = files[index];
+
+                this.filesUploadList[index] = {
+                    name: file.name,
+                    lastModified: file.lastModified,
+                    lastModifiedDate: file.lastModifiedDate,
+                    size: file.size,
+                    progress: 0,
+                    status: 0,
+                    error: "Неизвестная ошибка",
+                }
+            }
 
             // Поочередная загрузка каждого файла
             for (let index in files)
                 await this.uploadFile(files[index], index);
 
+            // Завершение загрузки всех файлов
+            document.getElementById('input-upload-files').value = '';
+            this.doneUploadFlag = true;
+
         },
 
         async uploadFile(file, index) {
-
-            this.fileProgress = 0;
-            this.fileCurrent = -1; // Обнуление идентификтора текущей загрузки файла
-            this.path = false; // Сброс пути до файла на сервере
 
             this.offset = 0;
             this.fileProgress = 0;
@@ -138,6 +146,8 @@ export default {
                 hash: false, // Идентификатор созданного файла
             }
 
+            let response = {};
+
             while (this.offset < formdata.size) {
 
                 if (this.offset + this.chunk >= formdata.size)
@@ -151,11 +161,15 @@ export default {
                 if (formdata.chunk === false)
                     return;
 
-                formdata.hash = await this.uploadChunk(formdata);
+                response = await this.uploadChunk(formdata);
+                formdata.hash = response.hash;
 
                 this.offset += this.chunk;
 
             }
+
+            this.fileCurrent = -1; // Обнуление идентификтора текущей загрузки файла
+            this.path = false; // Сброс пути до файла на сервере
 
         },
 
@@ -218,15 +232,12 @@ export default {
 
                     this.progress = this.progress > 100 ? 100 : this.progress;
 
-                    if (this.filesUploadList[index].progress >= 100)
-                        this.filesUploadList[index].status = 2;
-
                 }
 
             }).then(({data}) => {
 
                 // Имя файла для склейки очередной части
-                hash = data.hash;
+                hash = data;
 
                 // Путь до файла на сервере, требуется для правильной склейки файла в момент
                 // смены даты, в противном случае файл разделится по каталогам дат
@@ -251,12 +262,6 @@ export default {
                 }
 
             });
-
-            // Завершение загрузки всех файлов
-            if (this.filesUploaded.length == this.filesUploadList.length) {
-                document.getElementById('input-upload-files').value = '';
-                this.doneUploadFlag = true;
-            }
 
             return hash;
 
