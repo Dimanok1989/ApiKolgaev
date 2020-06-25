@@ -1,15 +1,18 @@
 <template>
     <div>
-        <b-nav-item href="#" @click="show = !show">Регистрация</b-nav-item>
+        <b-dropdown-item @click="openModal">Регистрация</b-dropdown-item>
+        <!-- <b-nav-item href="#" @click="show = !show">Регистрация</b-nav-item> -->
 
         <b-modal id="bv-modal-user-login"
-            v-model="show"
+            v-model="openReg"
             title="Регистрация"
             no-fade
             hide-footer
             no-close-on-backdrop
+            no-close-on-esc
             :hide-header-close="loading"
             @show="open"
+            @close="closeModal"
         >
             <b-overlay :show="loading" rounded="sm" spinner-type="grow" variant="transparent" class="py-1">
         
@@ -95,16 +98,14 @@
 <script>
     export default {
 
-        props: {
-            login: {
-                default: false
-            },
-        },
+        props: [
+            'login', // Идентификатор авторизации пользователя
+            'openReg', // Идентификтаор открытия окна
+        ],
 
         data() {
             return {
                 loading: false,
-                show: false,
                 user: {},
                 data: {
                     email: "",
@@ -142,6 +143,15 @@
         },
 
         methods: {
+
+            openModal() {
+                this.$emit('update:openReg', true);
+            },
+
+            closeModal(bvModalEvt) {
+                bvModalEvt.preventDefault();
+                this.$emit('update:openReg', false);
+            },
 
             open() {
 

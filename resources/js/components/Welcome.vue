@@ -1,49 +1,52 @@
 <style>
-    .welcome.full-height {
-        height: 100vh;
-    }
+.main-header {
+    width: 100%;
+    height: 300px;
+    background-color: #004587;
+}
+.main-header-bg-grd {
+    background: url(/css/header/gradient.png) repeat-x;
+    background-size: auto 300px;
+}
 
-    .welcome.flex-center {
-        align-items: center;
-        display: flex;
-        justify-content: center;
-    }
-
-    .welcome.position-ref {
-        position: relative;
-    }
-
-    .welcome .content {
-        text-align: center;
-    }
-
-    .welcome .title {
-        font-size: 84px;
-    }
-
-    .welcome .m-b-md {
-        margin-bottom: 30px;
-    }
+.welcome-title {
+    font-size: 58px;
+}
 </style>
 
 <template>
-    <div class="flex-center position-ref full-height welcome">
-        <div class="content">
-            <div class="title m-b-md">
-                kolgaev.ru
+    <div>
+
+        <div class="main-header position-relative" id="main-header">
+            <div class="position-absolute w-100 h-100 main-header-bg-grd"></div>
+            <div class="position-absolute w-100 h-100 text-center text-light">
+                <div class="welcome-title mt-5">kolgaev.ru</div>
+                <div v-if="!login">
+                    <h4>Добро пожаловать!</h4>
+                    <div class="mt-3">
+                        <span class="font-weight-bold for-hover cursor-pointer" @click="openAuth">Войдите</span>
+                        <span>или</span>
+                        <span class="font-weight-bold for-hover cursor-pointer" @click="openReg">Зарегистрируйтесь</span>
+                    </div>
+                </div>
+                <div v-else>
+                    <h4>Добро пожаловать, {{ user.name }}!</h4>
+                    <h5>Это наш сайт!</h5>
+                </div>
             </div>
         </div>
+
     </div>
+    
 </template>
 
 <script>
     export default {
 
-        props: {
-            login: {
-                default: false
-            },
-        },
+        props: [
+            'login',
+            'user',
+        ],
 
         data() {
             return {
@@ -66,12 +69,25 @@
 
         mounted() {
 
-            console.log(this.login);
-
+            let src = '/css/header/header.jpg',
+                img = document.createElement("img");
+            img.onload = function() {
+                let mainHeader = document.getElementById('main-header');
+                mainHeader.style.background = "url(" + src + ")";
+                mainHeader.style.backgroundPosition = "50%";
+            }
+            img.src = src;
 
         },
 
         methods: {
+
+            openAuth() {
+                this.$eventBus.$emit('open-auth');
+            },
+            openReg() {
+                this.$eventBus.$emit('open-reg');
+            },
 
         },
 

@@ -20,7 +20,7 @@
 
 <template>
 
-    <div>
+    <div class="container my-4 p-1">
 
         <b-card>
 

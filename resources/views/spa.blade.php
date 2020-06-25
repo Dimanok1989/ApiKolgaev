@@ -10,6 +10,10 @@
 
     <body class="bg-light">
 
+        <div style="height: 100vh; font-size: 74px; justify-content: center; display: flex; align-items: center; color: #636b6f; font-family: 'Verdana', sans-serif; font-weight: 200;" id="main-loading">
+            <span>k<img src="/css/main-loading.gif" style="margin: 0 5px;" />lgaev.ru</span>
+        </div>
+
         <div id="app">
             <App/>
         </div>

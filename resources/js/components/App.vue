@@ -1,12 +1,13 @@
 <style>
     .bg-my-header {
-        background: #242835;
+        background: #1d2332;
         color: #5e80e4;
     }
 </style>
 
 <template>
     <div>
+
         <div class="header bg-my-header" v-if="loading">
 
             <div class="container">
@@ -18,13 +19,17 @@
                         <span class="pl-1 d-none">Kolgaev.ru</span>
                     </b-navbar-brand>
 
-                    <b-navbar-nav class="ml-auto" right v-if="!login">
-                        <user-registration :login.sync="login" />
-                        <user-login :login.sync="login" />
-                    </b-navbar-nav>
-
-                    <b-navbar-nav class="ml-auto" right v-if="login">
-                        <b-nav-item href="#" @click="logout">Выход</b-nav-item>
+                    <b-navbar-nav class="ml-auto" right>
+                        <b-nav-item-dropdown toggle-class="text-light for-hover p-0 m-0" no-caret right toggle-tag="span" menu-class="shadow">
+                            <template v-slot:button-content>
+                                <b-avatar :src="user.avatar" v-if="login && user.avatar"></b-avatar>
+                                <b-avatar :text="String(user.name)[0]+(user.surname ? String(user.surname)[0] : '')" v-else-if="login"></b-avatar>
+                                <fa-icon :icon="['fas','user']" v-else />
+                            </template>
+                            <user-registration :openReg.sync="openReg" :login.sync="login" :userMain.sync="user" v-if="!login" />
+                            <user-login :openLogin.sync="openLogin" :login.sync="login" :userMain.sync="user" v-if="!login" />
+                            <b-dropdown-item href="#" @click="logout" v-if="login">Выход</b-dropdown-item>
+                        </b-nav-item-dropdown>
                     </b-navbar-nav>
 
                 </b-navbar>
@@ -33,12 +38,11 @@
 
         </div>
 
-        <div class="container my-4 p-1" v-if="loading">
-            <router-view :login="login" :user="user" />
-        </div>
+        <router-view :login="login" :user="user" v-if="loading" />
 
         <div class="global-loading" v-if="!loading">
-            <b-spinner variant="dark" type="grow"></b-spinner>
+            <!-- <b-spinner variant="dark" type="grow"></b-spinner> -->
+            <img src="/css/main-loading.gif" width="48" height="48" />
         </div>
 
     </div>
@@ -49,20 +53,31 @@
 
         data() {
             return {
+
                 display404: false,
+
                 loading: false, // Идентификатор глобальной загрузки певоначальных данных
-                token: false, // Токен пользователя
+
                 user: {}, // Данные пользователя
                 login: false, // Идентификатор авторизации
+                token: false, // Токен пользователя
+
+                openLogin: false, // Открытие окна авторизации
+                openReg: false, // Открытие окна регистрации                
+
             }
         },
 
         created() {
             this.$eventBus.$on('error-catch', this.errorCatch);
+            this.$eventBus.$on('open-auth', this.openModalAuth);
+            this.$eventBus.$on('open-reg', this.openModalReg);
         },
 
         beforeDestroy(){
             this.$eventBus.$off('error-catch');
+            this.$eventBus.$off('open-auth');
+            this.$eventBus.$off('open-reg');
         },
 
         beforeMount() {
@@ -88,6 +103,9 @@
         },
 
         mounted() {
+
+            let el = document.getElementById('main-loading');
+            el.parentNode.removeChild(el);
 
         },
 
@@ -134,6 +152,13 @@
 
             errorCatch(err) {
                 console.log(err);
+            },
+
+            openModalAuth() {
+                this.openLogin = true;
+            },
+            openModalReg() {
+                this.openReg = true;
             },
 
         },
