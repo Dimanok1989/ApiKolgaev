@@ -79,4 +79,28 @@ class AuthController extends Controller
 
     }
 
+    /**
+     * Метод формирования пунктов меню
+     */
+    public static function getUserMenu(Request $request) {
+
+        $menu = [];
+
+        // Пункты меню
+        $permissions = [
+            ['name' => "disk", 'title' => "Диск", 'icon' => "save"],
+            ['name' => "fuel", 'title' => "Расход топлива", 'icon' => "gas-pump"],
+        ];
+
+        // Проверка прав доступа к меню
+        foreach ($permissions as $key => $permission)
+            if ($request->user()->hasPermissionViaRole([$permission['name']]))
+                $menu[] = $permissions[$key];
+
+        return response([
+            'menu' => $menu,
+        ]);
+
+    }
+
 }

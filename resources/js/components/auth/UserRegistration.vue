@@ -100,6 +100,7 @@
 
         props: [
             'login', // Идентификатор авторизации пользователя
+            'userMain', // Данные пользователя
             'openReg', // Идентификтаор открытия окна
         ],
 
@@ -203,6 +204,9 @@
 
                     this.show = false;
                     this.$emit('update:login', true);
+                    this.$emit('update:userMain', data.user);
+
+                    this.$eventBus.$emit('get-user-menu');
 
                 }).catch(error => {
 

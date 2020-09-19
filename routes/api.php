@@ -23,6 +23,7 @@ Route::group(['prefix' => 'auth'], function () {
     Route::match(['get','post'], '/login', 'AuthController@login');
     Route::match(['get','post'], '/logout', 'AuthController@logout')->middleware('auth:api');
     Route::match(['get','post'], '/user', 'AuthController@user')->middleware('auth:api');
+    Route::match(['get','post'], '/getUserMenu', 'AuthController@getUserMenu')->middleware('auth:api');
 });
 
 Route::group([

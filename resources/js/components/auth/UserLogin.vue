@@ -122,6 +122,8 @@
                     this.$emit('update:login', true);
                     this.$emit('update:userMain', data.user);
 
+                    this.$eventBus.$emit('get-user-menu');
+
                 }).catch(error => console.log(error.response));
 
             },

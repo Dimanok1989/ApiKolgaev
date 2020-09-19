@@ -14,12 +14,15 @@
                 
                 <b-navbar toggleable="lg" type="dark">
 
+                    <Menu v-if="login" :menu="menu" />
+
                     <b-navbar-brand href="/" class="header-main-link">
                         <img src="/favicon.ico" class="d-inline-block rounded align-top for-hover" width="30" alt="Kolgaev.ru">
                         <span class="pl-1 d-none">Kolgaev.ru</span>
                     </b-navbar-brand>
 
                     <b-navbar-nav class="ml-auto" right>
+
                         <b-nav-item-dropdown toggle-class="text-light for-hover p-0 m-0" no-caret right toggle-tag="span" menu-class="shadow">
                             <template v-slot:button-content>
                                 <b-avatar :src="user.avatar" v-if="login && user.avatar"></b-avatar>
@@ -28,8 +31,14 @@
                             </template>
                             <user-registration :openReg.sync="openReg" :login.sync="login" :userMain.sync="user" v-if="!login" />
                             <user-login :openLogin.sync="openLogin" :login.sync="login" :userMain.sync="user" v-if="!login" />
+
+                            <template v-for="row in menu">
+                                <b-dropdown-item :key="row.name" :href="row.name" v-if="row.name == 'disk'">{{ row.title }}</b-dropdown-item>
+                            </template>
+
                             <b-dropdown-item href="#" @click="logout" v-if="login">Выход</b-dropdown-item>
                         </b-nav-item-dropdown>
+
                     </b-navbar-nav>
 
                 </b-navbar>
@@ -38,7 +47,7 @@
 
         </div>
 
-        <router-view :login="login" :user="user" v-if="loading" />
+        <router-view :login="login" :user="user" :menu="menu" v-if="loading" />
 
         <div class="global-loading" v-if="!loading">
             <!-- <b-spinner variant="dark" type="grow"></b-spinner> -->
@@ -61,17 +70,21 @@
                 user: {}, // Данные пользователя
                 login: false, // Идентификатор авторизации
                 token: false, // Токен пользователя
+                menu: [], // Пункты меню
 
                 openLogin: false, // Открытие окна авторизации
                 openReg: false, // Открытие окна регистрации                
 
             }
+
         },
 
         created() {
             this.$eventBus.$on('error-catch', this.errorCatch);
             this.$eventBus.$on('open-auth', this.openModalAuth);
             this.$eventBus.$on('open-reg', this.openModalReg);
+            this.$eventBus.$on('get-user-menu', this.getUserMenu);
+            this.$eventBus.$on('logout', this.logout);
         },
 
         beforeDestroy(){
@@ -80,7 +93,7 @@
             this.$eventBus.$off('open-reg');
         },
 
-        beforeMount() {
+        async beforeMount() {
 
             let token = localStorage.getItem('token');
             
@@ -89,11 +102,13 @@
                 this.token = token ?? false;
                 window.axios.defaults.headers.common['Authorization'] = 'Bearer ' + this.token;
 
-                axios.post('/api/auth/user').then(({data}) => {
+                await axios.post('/api/auth/user').then(({data}) => {
                     this.checked(data);
                 }).catch(error => {
                     this.checked();
                 });
+
+                await this.getUserMenu();
 
             }
             else {
@@ -133,11 +148,17 @@
 
             },
 
+            /** Получение пунтов меню пользователя */
+            async getUserMenu() {
+                await axios.post('/api/auth/getUserMenu').then(({data}) => {
+                    this.menu = data.menu;
+                });
+            },
+
             logout() {
 
                 axios.post('/api/auth/logout').then(({data}) => {
 
-                    console.log(data);
                     localStorage.removeItem('token');
                     localStorage.removeItem('user');
 
@@ -150,6 +171,9 @@
 
             },
 
+            /**
+             * Вывод глобальной ошибки
+             */
             errorCatch(err) {
                 console.log(err);
             },
