@@ -105,5 +105,8 @@ Route::get('/dev', function () {
 Route::get('/{any}', function () {
     return view('spa');
 });
+Route::get('/{any}/{param}', function () {
+    return view('spa');
+});
 
 // Auth::routes();

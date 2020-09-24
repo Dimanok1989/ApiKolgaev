@@ -42,3 +42,19 @@ Route::group([
 });
 
 // Route::post('/disk/uploadFile', 'Disk\UploadFile@upload')->middleware('auth:api');
+
+/**
+ * Раздел расхода топлива
+ */
+Route::group([
+    'prefix' => 'fuel',
+    'middleware' => [
+        'auth:api',
+        'permission:fuel'
+    ],
+], function() {
+
+    Route::post('/getMainData', 'Fuel\Fuel@getMainData');
+    Route::post('/getFuelsCar', 'Fuel\Fuel@getFuelsCar');
+
+});

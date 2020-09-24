@@ -28,7 +28,10 @@ const routers = [
     { path: '/', name: 'welcome', component: components.Welcome },
     { path: '/main', name: 'main', component: components.Main },
     { path: '/disk', name: 'disk', component: components.Disk },
+
     { path: '/fuel', name: 'fuel', component: components.Fuel },
+    { path: '/fuel/:id', name: 'fuelRows', component: components.FuelRows },
+
     { path: '*', component: components.NotFound }
 ];
 
