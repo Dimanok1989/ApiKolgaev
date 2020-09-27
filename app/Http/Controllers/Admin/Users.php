@@ -130,6 +130,7 @@ class Users extends Controller
             'role' => $row->role,
             'role_id' => $row->role_id ?? 0,
             'date' => $date,
+            'last' => $row->last_visit ? date("d.m.Y H:i:s", strtotime($row->last_visit)) : null,
         ];
 
     }

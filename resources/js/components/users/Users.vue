@@ -52,11 +52,14 @@
 
             <ul class="list-group text-left mt-3" v-if="!permissions.length">
                 <button type="button" class="list-group-item list-group-item-action position-relative role-item" v-for="item in users" :key="item.id" @click="getUserData(item)" :disabled="item.id == userLoad" :id="`user-${item.id}`">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="font-weight-bold">{{ item.name }}</div>
+                        <small v-if="item.last">Был {{ item.last }}</small>
+                    </div>
                     <div>
                         <span>{{ item.email }}</span>
                         <span class="badge badge-primary">{{ item.role }}</span>
                     </div>
-                    <div class="font-weight-bold">{{ item.name }}</div>
                     <div>
                         <span>{{ item.login }}</span>
                         <span>{{ item.phone }}</span>
@@ -95,6 +98,10 @@
             <div class="d-flex justify-content-between align-items-center px-1 mb-2">
                 <span>Регистрация</span>
                 <strong>{{ user.date }}</strong>
+            </div>
+            <div class="d-flex justify-content-between align-items-center px-1 mb-2">
+                <span>Был на сайте</span>
+                <strong>{{ user.last || `---` }}</strong>
             </div>
 
             <div class="position-relative role-item mb-3">
