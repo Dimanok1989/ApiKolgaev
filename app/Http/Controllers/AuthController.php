@@ -90,6 +90,7 @@ class AuthController extends Controller
         $permissions = [
             ['name' => "disk", 'title' => "Диск", 'icon' => "save"],
             ['name' => "fuel", 'title' => "Расход топлива", 'icon' => "gas-pump"],
+            ['name' => "users", 'title' => "Пользователи", 'icon' => "users"],
         ];
 
         // Проверка прав доступа к меню

@@ -32,6 +32,8 @@ const routers = [
     { path: '/fuel', name: 'fuel', component: components.Fuel },
     { path: '/fuel/:id', name: 'fuelRows', component: components.FuelRows },
 
+    { path: '/users', name: 'users', component: components.Users },
+
     { path: '*', component: components.NotFound }
 ];
 

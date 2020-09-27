@@ -58,3 +58,27 @@ Route::group([
     Route::post('/getFuelsCar', 'Fuel\Fuel@getFuelsCar');
 
 });
+
+/**
+ * Раздел расхода топлива
+ */
+Route::group([
+    'prefix' => 'admin',
+    'middleware' => [
+        'auth:api',
+        'permission:admin'
+    ],
+], function() {
+
+    Route::group([
+        'prefix' => 'users',
+        'middleware' => 'permission:admin_users'
+    ], function() {
+
+        Route::post('/getRoles', 'Admin\Users@getRoles');
+        Route::post('/getPermissions', 'Admin\Users@getPermissions');
+        Route::post('/setPermissionRole', 'Admin\Users@setPermissionRole');
+
+    });
+
+});
