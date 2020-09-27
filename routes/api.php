@@ -56,6 +56,8 @@ Route::group([
 
     Route::post('/getMainData', 'Fuel\Fuel@getMainData');
     Route::post('/getFuelsCar', 'Fuel\Fuel@getFuelsCar');
+    
+    Route::post('/addFuel', 'Fuel\Fuel@addFuel');
 
 });
 

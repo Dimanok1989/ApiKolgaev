@@ -54,7 +54,7 @@
                 <button type="button" class="list-group-item list-group-item-action position-relative role-item" v-for="item in users" :key="item.id" @click="getUserData(item)" :disabled="item.id == userLoad" :id="`user-${item.id}`">
                     <div class="d-flex justify-content-between align-items-center">
                         <div class="font-weight-bold">{{ item.name }}</div>
-                        <small v-if="item.last">Был {{ item.last }}</small>
+                        <small v-if="item.last" class="text-muted">Был {{ item.last }}</small>
                     </div>
                     <div>
                         <span>{{ item.email }}</span>
