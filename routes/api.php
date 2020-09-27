@@ -79,6 +79,12 @@ Route::group([
         Route::post('/getPermissions', 'Admin\Users@getPermissions');
         Route::post('/setPermissionRole', 'Admin\Users@setPermissionRole');
 
+        Route::post('/getLastUsers', 'Admin\Users@getLastUsers');
+        Route::post('/getUserData', 'Admin\Users@getUserData');
+
+        Route::post('/setRole', 'Admin\Users@setRole');
+        Route::post('/setPermissionUser', 'Admin\Users@setPermissionUser');
+
     });
 
 });

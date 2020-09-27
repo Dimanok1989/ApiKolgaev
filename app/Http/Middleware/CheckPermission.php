@@ -18,7 +18,7 @@ class CheckPermission
     public function handle($request, Closure $next, ... $permissions)
     {
 
-        if ($request->user()->hasPermissionViaRole($permissions))
+        if ($request->user()->hasPermissionViaRole($permissions) OR $request->user()->hasPermission($permissions))
             return $next($request);
 
         return response([

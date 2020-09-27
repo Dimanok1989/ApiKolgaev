@@ -59,6 +59,27 @@ trait HasUserRolesAndUserPermissions
     }
 
     /**
+     * @param $permission
+     * @return bool
+     */
+    public function hasPermission($permission) {
+
+        $permission = is_array($permission) ? $permission : [$permission];
+        return (bool) $this->permissions->whereIn('slug', $permission)->count();
+
+    }
+
+    /**
+     * @param $permission
+     * @return bool
+     */
+    public function hasPermissionTo(... $permission) {
+
+        return $this->hasPermission($permission);
+
+    }
+
+    /**
      * Метод проверки прав по роли пользователя
      * 
      * @param array $permission Наименование права

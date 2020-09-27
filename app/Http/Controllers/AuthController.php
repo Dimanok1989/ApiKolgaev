@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Hash;
 use App\Http\Requests\RegisterRequest;
 
 use App\User;
+use App\Models\Users\UsersUserRole;
 
 class AuthController extends Controller
 {
@@ -69,6 +70,12 @@ class AuthController extends Controller
         ]);
 
         Auth::attempt(['email' => $request->email, 'password' => $request->password]);
+
+        $userRole = new UsersUserRole;
+        $userRole->user_id = Auth::user()->id;
+        $userRole->user_role_id = 1;
+        $userRole->save();
+
         return self::loginDone();
 
     }
@@ -88,15 +95,18 @@ class AuthController extends Controller
 
         // Пункты меню
         $permissions = [
-            ['name' => "disk", 'title' => "Диск", 'icon' => "save"],
-            ['name' => "fuel", 'title' => "Расход топлива", 'icon' => "gas-pump"],
-            ['name' => "users", 'title' => "Пользователи", 'icon' => "users"],
+            ['name' => "disk", 'title' => "Диск", 'icon' => "save", 'permission' => "disk"],
+            ['name' => "fuel", 'title' => "Расход топлива", 'icon' => "gas-pump", 'permission' => "fuel"],
+            ['name' => "users", 'title' => "Пользователи", 'icon' => "users", 'permission' => "admin_users"],
         ];
 
         // Проверка прав доступа к меню
-        foreach ($permissions as $key => $permission)
-            if ($request->user()->hasPermissionViaRole([$permission['name']]))
+        foreach ($permissions as $key => $permission) {
+
+            $per = $permission['permission'];
+            if ($request->user()->hasPermissionViaRole([$per]) OR $request->user()->hasPermission($per))
                 $menu[] = $permissions[$key];
+        }
 
         return response([
             'menu' => $menu,
