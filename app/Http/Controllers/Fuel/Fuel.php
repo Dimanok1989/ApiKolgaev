@@ -135,8 +135,8 @@ class Fuel extends Controller
         $refueling->price = $request->price;
         $refueling->type = $request->type;
         $refueling->gas_station = $request->stantion;
-        $refueling->full = $request->full;
-        $refueling->lost = $request->lost;
+        $refueling->full = (int) $request->full;
+        $refueling->lost = (int) $request->lost;
 
         $refueling->save();
 
