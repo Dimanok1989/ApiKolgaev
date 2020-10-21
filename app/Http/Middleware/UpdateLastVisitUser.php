@@ -17,7 +17,7 @@ class UpdateLastVisitUser
     public function handle($request, Closure $next)
     {
 
-        if ($request->user()->id) {
+        if ($request->user()) {
             $user = \App\User::find($request->user()->id);
             $user->last_visit = date("Y-m-d H:i:s");
             $user->save();

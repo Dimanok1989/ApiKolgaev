@@ -36,7 +36,7 @@ class Fuel extends Controller
         ->join('fuel_cars', 'fuel_cars.id', '=', 'fuel_refuelings.car')
         ->whereIn('fuel_refuelings.car', $in)
         ->orderBy('fuel_refuelings.mileage', 'DESC')
-        ->limit(5)->get();
+        ->limit(10)->get();
 
         foreach ($fuels as &$fuel)
             $fuel->date = date("d.m.Y", strtotime($fuel->date));
