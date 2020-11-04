@@ -1,6 +1,8 @@
 /node_modules
+/react-app/node_modules
 /public/hot
 /public/storage
+/public/storage.lnk
 /storage/*.key
 /vendor
 .env

@@ -20,15 +20,22 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\File;
 
+use App\Http\Controllers\Disk\MainDataDisk;
 use App\DiskFile;
 
 class UploadFile extends Controller
 {
 
+    /**
+     * Метод загрузки части файла
+     * 
+     * @param Illuminate\Http\Request $request
+     * @return Response
+     */
     public static function upload(Request $request) {
 
         if (!$request->user)
-            return parent::error("Нет идентификатора", 400);
+            return response(['message' => "Нет идентификатора пользователя"], 400);
 
         $dir = $request->path ? $request->path : "drive/" . date("Y/m/d"); // Путь до файла
         
@@ -49,6 +56,7 @@ class UploadFile extends Controller
         else
             $file->real_name = self::createFile($dir, $file);
 
+        // Дополнение файла очередной частью
         if (Storage::disk('local')->exists("{$dir}/{$file->real_name}")) {
 
             $chunk = base64_decode($request->chunk);
@@ -59,21 +67,31 @@ class UploadFile extends Controller
 
         }
 
+        // Завершение загрузки файла
         if ($request->endchunk)
             $file->save();
 
         $file->size = parent::formatSize($file->size);
         $file->time = date("d.m.Y H:i:s");
         $file->is_dir = 0;
+        $file->icon = MainDataDisk::getFileIcon($file);        
 
         return response([
             'hash' => $file->real_name,
             'path' => $file->path,
+            'size' => filesize(storage_path('app/' . $dir . "/" . $file->real_name)),
             'file' => $request->endchunk ? $file : false,
         ]);
 
     }
 
+    /**
+     * Метод создания файла в каталоге хранения файлов
+     * 
+     * @param string $dir путь до каталога с файлом
+     * @param object $file объект данных файла
+     * @return string
+     */
     public static function createFile($dir, $file) {
 
         $file->real_name = md5($file->name) . "." . $file->ext; // Имя файла для хранения
@@ -91,6 +109,12 @@ class UploadFile extends Controller
 
     }
 
+    /**
+     * Генератор записи части файла
+     * 
+     * @param string $file путь до файла
+     * @return object
+     */
     public static function putChunk($file) {
 
         $f = fopen($file, 'a');
@@ -98,60 +122,6 @@ class UploadFile extends Controller
             $line = yield;
             fwrite($f, $line);
         }
-
-    }
-    
-    public static function uploadOld(Request $request) {
-
-        if (!$request->user)
-            return parent::error("Нет идентификатора", 400);
-
-        $dir = "drive/" . date("Y/m/d"); // Путь до файла
-
-        return self::uploadNew($request);
-
-        $file = $request->file('files'); // Объект с файлом
-
-        $newfile = new DiskFile; // Создание нового экземпляра строки бд
-        $newfile->user = $request->user; // Принадлежность файла к пользователю
-        $newfile->path = $dir; // Путь до каталога с файлом
-        // $newfile->name = $file->getClientOriginalName(); // Имя файла для вывода
-        $newfile->name = basename($file->getClientOriginalName(), '.' . $file->getClientOriginalExtension());
-        $newfile->ext = $file->getClientOriginalExtension(); // Расширение файла
-		$newfile->mime_type = $file->getClientMimeType(); // Тип файла
-        $newfile->size = $file->getSize(); // Размер файла в байтах
-        $newfile->in_dir = (int) $request->cd; // Принадлежность к каталогу
-
-        $newfile->real_name = md5($newfile->name) . "." . $newfile->ext; // Имя файла для хранения
-
-        $count = 1;
-		while (Storage::disk('local')->exists("{$dir}/{$newfile->real_name}")) {
-            $newfile->real_name = md5($newfile->real_name . $count) . "." . $newfile->ext;
-            $count++;
-        }
-
-        $path = $file->getRealPath();
-
-        // $put = $file->storeAs($dir, $newfile->real_name, 'local');
-        // $put = Storage::disk('local')->putFileAs($dir, $file, $newfile->real_name);
-        // $put = $file->move(storage_path('app/' . $dir), $newfile->real_name);
-        // $put = rename($path, storage_path('app/' . $dir) . "/" . $newfile->real_name);
-        $put = true;
-
-        if (!$put)
-            return parent::error("Ошибка сохранения файла", 400);
-
-        $newfile->save();
-
-        $newfile->size = parent::formatSize($newfile->size);
-        $newfile->time = date("d.m.Y H:i:s");
-
-        return response([
-            'file' => $newfile,
-            'temp' => $path,
-            'put' => $put,
-            'request' => $request->all(),
-        ]);
 
     }
 

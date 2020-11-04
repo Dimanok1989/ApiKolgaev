@@ -18,7 +18,9 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/dev', function () {
+Route::get('/react', function () {
+
+    return view('react');
 
     return response([]);
 

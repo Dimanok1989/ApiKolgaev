@@ -29,9 +29,8 @@ class AuthController extends Controller
             return self::loginDone();
 
         return response([
-            'done' => "error",
             'message' => "Неверный логин или пароль",
-        ]);
+        ], 400);
 
     }
 

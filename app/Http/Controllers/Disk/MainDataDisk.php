@@ -17,7 +17,57 @@ class MainDataDisk extends Controller
         // $this->middleware('role:friend');
 
     }
+
+    /**
+     * Массив расширений для определения иконки
+     * 
+     * @var array $exts
+     */
+    public static $exts = [
+        ['JPG','JPEG','SVG','PNG','BMP'],
+        ['MOV','AVI','MP4','WEBM','MKV','M4V'],
+        ['ZIP','7Z','XZ','BZ2'],
+        ['RAR'],
+        ['TXT'],
+        ['RTF','DOC','DOCX'],
+        ['XLS','CSV'],
+        ['MP3','WAV','OGG'],
+        ['PDF'],
+        ['PHP','XML','VUE'],
+        ['JS'],
+        ['CSS'],
+        ['HTML'],
+        ['EXE','MSI'],
+    ];
+
+    /**
+     * Массив соотношения массива иконок с идентификатором иконки
+     * 
+     * @var array $icons
+     */
+    public static $icons = [
+        0 => 'image',
+        1 => 'video',
+        2 => 'zip',
+        3 => 'rar',
+        // 4 => 'text',
+        5 => 'docx',
+        6 => 'xls',
+        7 => 'audio',
+        // 8 => 'pdf',
+        9 => 'code',
+        10 => 'js',
+        11 => 'css',
+        12 => 'html',
+        13 => 'exe',
+    ];
     
+    /**
+     * Метод получения списка пользователей, доступным файловый менеджер
+     * 
+     * @param Illuminate\Http\Request $request
+     * @return Response
+     */
     public static function getUsersList(Request $request) {
 
         // Поиск пользователей, доступным раздел диска
@@ -31,11 +81,15 @@ class MainDataDisk extends Controller
 
     /**
      * Метод вывода файлов пользователя
+     * 
+     * @param Illuminate\Http\Request $request
+     * @return Response
      */
     public static function getUserFiles(Request $request) {
 
+        // Проверка идентификатора
         if (!$request->id)
-            return parent::error("Нет идентификатора", 400);
+            return parent::error("Ошибка идентификатора пользователя", 400);
 
         $in_dir = (int) $request->folder;
 
@@ -54,6 +108,7 @@ class MainDataDisk extends Controller
 
                 $file->size = null;
                 $file->ext = "Папка";
+                $file->icon = "folder";
 
                 $file->time = date("d.m.Y H:i:s", strtotime($file->created_at));
 
@@ -63,6 +118,7 @@ class MainDataDisk extends Controller
             else {
 
                 $file->size = parent::formatSize($file->size);
+                $file->icon = self::getFileIcon($file);
 
                 if (Storage::disk('local')->exists($file->path . "/" . $file->real_name))
                     $time = Storage::disk('local')->lastModified($file->path . "/" . $file->real_name);
@@ -102,7 +158,41 @@ class MainDataDisk extends Controller
     }
 
     /**
+     * Метод определения наименования икноки для расширения файла
+     * 
+     * @param object $file объект строки файла
+     * @return string наименование иконки файла
+     */
+    public static function getFileIcon($file) {
+
+        $EXT = mb_strtoupper($file->ext);
+        $searched = false;
+
+        foreach (self::$exts as $key => $exts) {
+
+            foreach ($exts as $ext) {
+                if ($EXT == $ext) {
+                    $searched = $key;
+                    break;
+                }
+            }
+
+            if ($searched !== false)
+                break;
+        }
+
+        if ($searched !== false AND isset(self::$icons[$searched]))
+            return self::$icons[$searched];
+
+        return "file";
+
+    }
+
+    /**
      * Создание нового каталога
+     * 
+     * @param Illuminate\Http\Request $request
+     * @return Response
      */
     public static function mkdir(Request $request) {
 
@@ -126,6 +216,9 @@ class MainDataDisk extends Controller
 
     /**
      * Переименовывание файла
+     * 
+     * @param Illuminate\Http\Request $request
+     * @return Response
      */
     public static function rename(Request $request) {
 

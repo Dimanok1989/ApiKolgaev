@@ -21,7 +21,7 @@ class Controller extends BaseController
 
     }
 
-    public static function error($message = "Ошибка", $status = 200, $code = 0, $errors = []) {
+    public static function error($message = "Ошибка", $status = 400, $code = 0, $errors = []) {
 
         return response([
             'done' => "error",
