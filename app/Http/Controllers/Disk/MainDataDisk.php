@@ -26,18 +26,19 @@ class MainDataDisk extends Controller
     public static $exts = [
         ['JPG','JPEG','SVG','PNG','BMP'],
         ['MOV','AVI','MP4','WEBM','MKV','M4V'],
-        ['ZIP','7Z','XZ','BZ2'],
+        ['ZIP','XZ','BZ2'],
         ['RAR'],
         ['TXT'],
         ['RTF','DOC','DOCX'],
         ['XLS','CSV'],
         ['MP3','WAV','OGG'],
         ['PDF'],
-        ['PHP','XML','VUE'],
+        ['PHP','XML','VUE','SQL'],
         ['JS'],
         ['CSS'],
         ['HTML'],
         ['EXE','MSI'],
+        ['7Z'],
     ];
 
     /**
@@ -54,12 +55,13 @@ class MainDataDisk extends Controller
         5 => 'docx',
         6 => 'xls',
         7 => 'audio',
-        // 8 => 'pdf',
+        8 => 'pdf',
         9 => 'code',
         10 => 'js',
         11 => 'css',
         12 => 'html',
         13 => 'exe',
+        14 => 'sevez',
     ];
     
     /**
