@@ -68,7 +68,7 @@ class MainDataDisk extends Controller
      * Метод получения списка пользователей, доступным файловый менеджер
      * 
      * @param Illuminate\Http\Request $request
-     * @return Response
+     * @return response
      */
     public static function getUsersList(Request $request) {
 
@@ -85,7 +85,7 @@ class MainDataDisk extends Controller
      * Метод вывода файлов пользователя
      * 
      * @param Illuminate\Http\Request $request
-     * @return Response
+     * @return response
      */
     public static function getUserFiles(Request $request) {
 
@@ -194,7 +194,7 @@ class MainDataDisk extends Controller
      * Создание нового каталога
      * 
      * @param Illuminate\Http\Request $request
-     * @return Response
+     * @return response
      */
     public static function mkdir(Request $request) {
 
@@ -217,32 +217,55 @@ class MainDataDisk extends Controller
     }
 
     /**
+     * Получение имени файла
+     * 
+     * @param Illuminate\Http\Request $request
+     * @return response
+     */
+    public static function getNameFile(Request $request) {
+
+        if (!$request->id)
+            return response(['message' => "Не найден идентификатор файла"], 400);
+
+        if (!$file = DiskFile::find($request->id))
+            return response(['message' => "Файл не найден"], 400);
+
+        if ($file->deleted_at)
+            return response(['message' => "Этот файл уже удалили"], 400);
+
+        return response([
+            'name' => $file->name
+        ]);
+
+    }
+
+    /**
      * Переименовывание файла
      * 
      * @param Illuminate\Http\Request $request
-     * @return Response
+     * @return response
      */
     public static function rename(Request $request) {
 
         if (!$request->name)
-            return parent::error("Пустое имя файла");
+            return response(['message' => "Пустое имя файла"], 400);
 
         // if (preg_match("/(^[a-zA-Z0-9]+([a-zA-Zа-яА-Я\_0-9\.-]*))$/", $request->name))
         //     return parent::error("Недопустимое имя файла");
-        
-        $file = DiskFile::find($request->id);
 
-        if (!$file)
-            return parent::error("Файл не найден");
+        if (!$file = DiskFile::find($request->id))
+            return response(['message' => "Файл не найден"], 400);
 
         if ($file->user != $request->user()->id)
-            return parent::error("Этот файл нельзя переименовать");
+            return response(['message' => "Этот файл нельзя переименовать"], 400);
 
         $file->name = $request->name;
         $file->save();
+
+        $name = $file->name . ($file->ext ? "." . $file->ext : '');
         
         return response([
-            $file
+            'name' => $name
         ]);
 
     }
