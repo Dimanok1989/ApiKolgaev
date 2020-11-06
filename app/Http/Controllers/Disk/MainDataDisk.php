@@ -209,6 +209,7 @@ class MainDataDisk extends Controller
 
         $file->ext = "Папка";
         $file->time = date("d.m.Y H:i:s");
+        $file->icon = "folder";
 
         return response([
             'file' => $file,
