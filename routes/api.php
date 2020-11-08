@@ -39,7 +39,9 @@ Route::group([
     Route::post('/mkdir', 'Disk\MainDataDisk@mkdir');
     Route::post('/getNameFile', 'Disk\MainDataDisk@getNameFile');
     Route::post('/rename', 'Disk\MainDataDisk@rename');
+    Route::post('/startDownload', 'Disk\DownloadFile@startDownload');
     Route::post('/download', 'Disk\DownloadFile@download');
+    Route::post('/addFileToZip', 'Disk\DownloadFile@addFileToZip');
 });
 
 // Route::post('/disk/uploadFile', 'Disk\UploadFile@upload')->middleware('auth:api');

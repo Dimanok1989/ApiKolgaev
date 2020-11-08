@@ -48,6 +48,7 @@ class UploadFile extends Controller
         $file->name = $pathinfo['filename'];
         $file->ext = $pathinfo['extension'];
         $file->size = $request->size; // Размер файла в байтах
+        $file->mime_type = $request->type;
         $file->in_dir = (int) $request->cd; // Принадлежность к каталогу
         $file->real_name = md5($file->name) . "." . $file->ext; // Имя файла для хранения
 
@@ -74,7 +75,7 @@ class UploadFile extends Controller
         $file->size = parent::formatSize($file->size);
         $file->time = date("d.m.Y H:i:s");
         $file->is_dir = 0;
-        $file->icon = MainDataDisk::getFileIcon($file);        
+        $file->icon = MainDataDisk::getFileIcon($file);
 
         return response([
             'hash' => $file->real_name,

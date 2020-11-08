@@ -51,7 +51,7 @@ class MainDataDisk extends Controller
         1 => 'video',
         2 => 'zip',
         3 => 'rar',
-        // 4 => 'text',
+        4 => 'txt',
         5 => 'docx',
         6 => 'xls',
         7 => 'audio',
@@ -166,6 +166,9 @@ class MainDataDisk extends Controller
      * @return string наименование иконки файла
      */
     public static function getFileIcon($file) {
+
+        if ($file->is_dir)
+            return "folder";
 
         $EXT = mb_strtoupper($file->ext);
         $searched = false;
