@@ -56,6 +56,12 @@ class DownloadFile extends Controller
 
     }
     
+    /**
+     * Метод загрузки файла
+     * 
+     * @param Illuminate\Http\Request $request
+     * @return response
+     */
     public static function download(Request $request) {
 
         if (!$file = DiskFile::find($request->id))
@@ -65,14 +71,95 @@ class DownloadFile extends Controller
             return self::createArchive($file);
 
         $name = $file->name . "." . $file->ext;
-
-        // Storage::disk('local')->exists("{$file->path}/{$file->real_name}")
-
         $path = storage_path("app/" . $file->path . "/" . $file->real_name);
 
         return response()->download($path, $name);
 
-        return Storage::disk('local')->download("{$file->path}/{$file->real_name}", $name);
+    }
+
+    /**
+     * Рекурсия создания дерева файлов в каталоге
+     * 
+     * @param int $id Идентификатор файла
+     * @param string $tree путь до каталога
+     */
+    public static function getFilesInDir($id, $tree = "") {
+
+        $files = DiskFile::where([
+            ['deleted_at', null],
+            ['in_dir', $id],
+        ])->get();
+
+        foreach ($files as $file) {
+
+            $name = $file->name;
+
+            if ($file->ext)
+                $name .= "." . $file->ext;
+
+            $path = $file->is_dir ? null : storage_path("app/" . $file->path . "/" . $file->real_name);
+
+            self::$tree[] = (object) [
+                'id' => $file->id,
+                'name' => $name,
+                'is_dir' => $file->is_dir,
+                'tree' => $tree,
+                'path' => $path,
+                'size' => $file->size,
+            ];
+
+            if ($file->is_dir) {
+
+                $newtree = ($tree != "" ? $tree . "/" : "") . $file->name;
+                self::getFilesInDir($file->id, $newtree);
+
+            }
+
+        }
+
+    }
+
+    /**
+     * Метод создания архива с файлами из каталога
+     * 
+     * @param object $file объект файла
+     * @return response
+     */
+    public static function createArchive($file) {
+
+        set_time_limit(200); // Увеличение времени работы скрипта
+
+        self::getFilesInDir($file->id); // Список файлов в каталоге
+        $tree = self::$tree; // Дерево файлов в каталоге
+
+        return response()->stream(function() use ($file, $tree) {
+
+            $options = new \ZipStream\Option\Archive();
+
+            $options->setSendHttpHeaders(true);
+            $options->setContentType("application/x-zip");
+            $options->setContentDisposition("Content-Disposition: attachment; filename={$file->name}.zip");
+            $date = date("d.m.Y в H:i:s");
+            $options->setComment("Архив каталога {$file->name}\nСоздан $date\n\nhttps://disk.kolgaev.ru");
+
+            $zip = new \ZipStream\ZipStream($file->name . ".zip", $options);
+
+            // Запись файлов в архив
+            foreach ($tree as $row) {
+
+                if ($row->is_dir == 0) {
+
+                    $fileName = ($row->tree != "" ? $row->tree . "/" : "") . $row->name;
+                    $streamRead = fopen($row->path, 'r');
+
+                    $zip->addFileFromStream($fileName, $streamRead);
+
+                }
+            }
+
+            $zip->finish();
+
+        });
 
     }
 
@@ -113,44 +200,6 @@ class DownloadFile extends Controller
             'tree' => self::$tree,
             // 'deleted' => $deleted ?? null,
         ]);
-
-    }
-
-    public static function createArchive($file) {
-
-        set_time_limit(200);
-
-        self::getFilesInDir($file->id); // Список файлов в каталоге
-        $tree = self::$tree; // Дерево файлов в каталоге
-
-        return response()->stream(function() use ($file, $tree) {
-
-            $options = new \ZipStream\Option\Archive();
-
-            $options->setSendHttpHeaders(true);
-            $options->setContentType("application/x-zip");
-            $options->setContentDisposition("Content-Disposition: attachment; filename={$file->name}.zip");
-            $date = date("d.m.Y в H:i:s");
-            $options->setComment("Архив каталога {$file->name}\nСоздан $date\n\nhttps://disk.kolgaev.ru");
-
-            $zip = new \ZipStream\ZipStream($file->name . ".zip", $options);
-
-            // Запись файлов в архив
-            foreach ($tree as $row) {
-
-                if ($row->is_dir == 0) {
-
-                    $fileName = ($row->tree != "" ? $row->tree . "/" : "") . $row->name;
-                    $streamRead = fopen($row->path, 'r');
-
-                    $zip->addFileFromStream($fileName, $streamRead);
-
-                }
-            }
-
-            $zip->finish();
-
-        });
 
     }
 
@@ -273,48 +322,6 @@ class DownloadFile extends Controller
         while (true) {
             $line = yield;
             fwrite($f, $line);
-        }
-
-    }
-
-    /**
-     * Рекурсия создания дерева файлов в каталоге
-     * 
-     * @param int $id Идентификатор файла
-     * @param string $tree путь до каталога
-     */
-    public static function getFilesInDir($id, $tree = "") {
-
-        $files = DiskFile::where([
-            ['deleted_at', null],
-            ['in_dir', $id],
-        ])->get();
-
-        foreach ($files as $file) {
-
-            $name = $file->name;
-
-            if ($file->ext)
-                $name .= "." . $file->ext;
-
-            $path = $file->is_dir ? null : storage_path("app/" . $file->path . "/" . $file->real_name);
-
-            self::$tree[] = (object) [
-                'id' => $file->id,
-                'name' => $name,
-                'is_dir' => $file->is_dir,
-                'tree' => $tree,
-                'path' => $path,
-                'size' => $file->size,
-            ];
-
-            if ($file->is_dir) {
-
-                $newtree = ($tree != "" ? $tree . "/" : "") . $file->name;
-                self::getFilesInDir($file->id, $newtree);
-
-            }
-
         }
 
     }
