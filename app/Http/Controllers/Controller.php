@@ -49,7 +49,7 @@ class Controller extends BaseController
 			4 => 'Тб',
 		];
 
-		$metric = 0;  
+		$metric = 0;
 
 		while(floor($size / 1024) > 0){
 			$metric ++;

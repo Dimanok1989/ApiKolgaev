@@ -14,7 +14,7 @@ class User extends Authenticatable
     use HasApiTokens, Notifiable, HasUserRolesAndUserPermissions;
 
     /**
-     * The attributes that are mass assignable.
+     * Атрибуты, которые назначаются массово.
      *
      * @var array
      */
@@ -23,7 +23,7 @@ class User extends Authenticatable
     ];
 
     /**
-     * The attributes that should be hidden for arrays.
+     * Атрибуты, которые следует скрыть для массивов.
      *
      * @var array
      */
@@ -32,7 +32,7 @@ class User extends Authenticatable
     ];
 
     /**
-     * The attributes that should be cast to native types.
+     * Атрибуты, которые следует приводить к собственным типам.
      *
      * @var array
      */
@@ -40,6 +40,11 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
     ];
 
+    /**
+     * Метод выводит список пользователей, которым доступен раздел диска
+     * 
+     * @return object
+     */
     public static function getUsersListForDisk() {
         
         return DB::table('users')

@@ -12,12 +12,6 @@ use App\DiskFile;
 class MainDataDisk extends Controller
 {
 
-    public function __construct() {
-
-        // $this->middleware('role:friend');
-
-    }
-
     /**
      * Массив расширений для определения иконки
      * 
@@ -63,6 +57,13 @@ class MainDataDisk extends Controller
         13 => 'exe',
         14 => 'sevez',
     ];
+
+    /**
+     * Лимит размера файлов
+     * 
+     * @var int
+     */
+    public static $limit = 500 * 1024 * 1024 * 1024;
     
     /**
      * Метод получения списка пользователей, доступным файловый менеджер
@@ -75,8 +76,38 @@ class MainDataDisk extends Controller
         // Поиск пользователей, доступным раздел диска
         $users = User::getUsersListForDisk();
 
+        $sizes = []; // Размер файлов по каждому пользователю
+        $size = 0; // Общий объем файлов
+
+        $data = DiskFile::select(\DB::raw('SUM(size) as size, user'))
+        ->where('deleted_at', NULL)
+        ->groupBy('user')
+        ->get();
+
+        foreach ($data as $row) {
+            $sizes[$row->user] = (int) $row->size;
+            $size += (int) $row->size;
+        }
+
+        foreach ($users as &$user) {
+            
+            $user->size = $sizes[$user->id] ?? 0;
+            $user->sizeFormat = parent::formatSize($user->size);
+
+        }
+
+        $free = self::$limit - $size;
+
         return response([
             'users' => $users,
+            'sizes' => [
+                'size' => $size,
+                'sizeFormat' => parent::formatSize($size),
+                'limit' => self::$limit,
+                'limitFormat' => parent::formatSize(self::$limit),
+                'free' => $free,
+                'freeFormat' => parent::formatSize($free),
+            ],
         ]);
 
     }
