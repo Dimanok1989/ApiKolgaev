@@ -122,7 +122,7 @@ class MainDataDisk extends Controller
 
         // Проверка идентификатора
         if (!$request->id)
-            return parent::error("Ошибка идентификатора пользователя", 400);
+            return response(['message' => "Ошибка идентификатора пользователя"], 400);
 
         $in_dir = (int) $request->folder;
 
@@ -131,7 +131,9 @@ class MainDataDisk extends Controller
 
         $data = DiskFile::where([
             ['in_dir', $in_dir],
-            ['user', $request->id]
+            ['user', $request->id],
+            ['deleted_at', NULL],
+            ['delete_query', NULL],
         ])
         ->orderBy('name')->get();
 
@@ -292,7 +294,7 @@ class MainDataDisk extends Controller
             return response(['message' => "Файл не найден"], 400);
 
         if ($file->user != $request->user()->id)
-            return response(['message' => "Этот файл нельзя переименовать"], 400);
+            return response(['message' => "Этот файл нельзя переименовать"], 403);
 
         $file->name = $request->name;
         $file->save();
@@ -301,6 +303,29 @@ class MainDataDisk extends Controller
         
         return response([
             'name' => $name
+        ]);
+
+    }
+
+    /**
+     * Удаление файла
+     * 
+     * @param Illuminate\Http\Request $request
+     * @return response
+     */
+    public static function deleteFile(Request $request) {
+
+        if (!$file = DiskFile::find($request->id))
+            return response(['message' => "Файл не найден"], 400);
+
+        if ($file->user != $request->user()->id)
+            return response(['message' => "Этот файл нельзя удалить"], 403);
+
+        $file->delete_query = date("Y-m-d H:i:s");
+        $file->save();
+
+        return response([
+            'message' => "Файл перемещен в корзину",
         ]);
 
     }
