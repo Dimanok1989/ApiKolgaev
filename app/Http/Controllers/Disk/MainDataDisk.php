@@ -247,6 +247,12 @@ class MainDataDisk extends Controller
         $file->time = date("d.m.Y H:i:s");
         $file->icon = "folder";
 
+        \App\Events\Disk::dispatch((object) [
+            'mkdir' => $file,
+            'user' => (int) $file->user,
+            'socketId' => $request->header('Socket-Id'),
+        ]);
+
         return response([
             'file' => $file,
         ]);
@@ -300,6 +306,12 @@ class MainDataDisk extends Controller
         $file->save();
 
         $name = $file->name . ($file->ext ? "." . $file->ext : '');
+
+        \App\Events\Disk::dispatch([
+            'rename' => $file,
+            'user' => (int) $file->user,
+            'socketId' => $request->header('Socket-Id'),
+        ]);
         
         return response([
             'name' => $name
@@ -323,6 +335,12 @@ class MainDataDisk extends Controller
 
         $file->delete_query = date("Y-m-d H:i:s");
         $file->save();
+
+        \App\Events\Disk::dispatch([
+            'delete' => $file,
+            'user' => (int) $file->user,
+            'socketId' => $request->header('Socket-Id'),
+        ]);
 
         return response([
             'message' => "Файл перемещен в корзину",

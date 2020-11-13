@@ -77,6 +77,16 @@ class UploadFile extends Controller
         $file->is_dir = 0;
         $file->icon = MainDataDisk::getFileIcon($file);
 
+        if ($request->endchunk) {
+
+            \App\Events\Disk::dispatch([
+                'new' => $file,
+                'user' => (int) $file->user,
+                'socketId' => $request->header('Socket-Id'),
+            ]);
+            
+        }
+
         return response([
             'hash' => $file->real_name,
             'path' => $file->path,
