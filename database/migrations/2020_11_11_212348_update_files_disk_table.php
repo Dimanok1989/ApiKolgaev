@@ -25,6 +25,6 @@ class UpdateFilesDiskTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('users');
+        Schema::dropIfExists('disk_files');
     }
 }

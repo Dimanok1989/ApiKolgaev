@@ -58,10 +58,10 @@ class UploadFile extends Controller
             $file->real_name = self::createFile($dir, $file);
 
         // Дополнение файла очередной частью
-        if (Storage::disk('local')->exists("{$dir}/{$file->real_name}")) {
+        if (Storage::disk('public')->exists("{$dir}/{$file->real_name}")) {
 
             $chunk = base64_decode($request->chunk);
-            $path = storage_path('app/' . $dir . "/" . $file->real_name);
+            $path = storage_path('app/public/' . $dir . "/" . $file->real_name);
 
             $write = self::putChunk($path);
             $write->send($chunk);
@@ -90,7 +90,7 @@ class UploadFile extends Controller
         return response([
             'hash' => $file->real_name,
             'path' => $file->path,
-            'size' => filesize(storage_path('app/' . $dir . "/" . $file->real_name)),
+            'size' => filesize(storage_path('app/public/' . $dir . "/" . $file->real_name)),
             'file' => $request->endchunk ? $file : false,
         ]);
 
@@ -109,12 +109,12 @@ class UploadFile extends Controller
         
         // Проверка повторяющегося имени
         $count = 1;
-		while (Storage::disk('local')->exists("{$dir}/{$file->real_name}")) {
+		while (Storage::disk('public')->exists("{$dir}/{$file->real_name}")) {
             $file->real_name = md5($file->real_name . $count) . "." . $file->ext;
             $count++;
         }
 
-        Storage::disk('local')->put("{$dir}/{$file->real_name}", "");
+        Storage::disk('public')->put("{$dir}/{$file->real_name}", "");
 
         return $file->real_name;
 

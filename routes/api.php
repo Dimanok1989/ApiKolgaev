@@ -45,6 +45,9 @@ Route::group([
     Route::post('/deleteFile', 'Disk\MainDataDisk@deleteFile');
 });
 
+/** Создание миниатюр для изображений */
+Route::get('/image/resize', 'Disk\Images@resize');
+
 // Route::post('/disk/uploadFile', 'Disk\UploadFile@upload')->middleware('auth:api');
 
 /**
