@@ -129,13 +129,21 @@ class MainDataDisk extends Controller
         $dirs = []; // Список каталогов
         $files = []; // Список файлов
 
-        $data = DiskFile::where([
+        $data = DiskFile::select(
+            'disk_files.*',
+            'disk_files_thumbnails.paht as thumb_paht',
+            'disk_files_thumbnails.litle as thumb_litle',
+            'disk_files_thumbnails.middle as thumb_middle'
+        )
+        ->where([
             ['in_dir', $in_dir],
             ['user', $request->id],
             ['deleted_at', NULL],
             ['delete_query', NULL],
         ])
-        ->orderBy('name')->get();
+        ->leftjoin('disk_files_thumbnails', 'disk_files_thumbnails.file_id', '=', 'disk_files.id')
+        ->orderBy('name')
+        ->get();
 
         foreach ($data as $file) {
 
@@ -155,10 +163,16 @@ class MainDataDisk extends Controller
                 $file->size = parent::formatSize($file->size);
                 $file->icon = self::getFileIcon($file);
 
-                if (Storage::disk('local')->exists($file->path . "/" . $file->real_name))
-                    $time = Storage::disk('local')->lastModified($file->path . "/" . $file->real_name);
+                if (Storage::disk('public')->exists($file->path . "/" . $file->real_name))
+                    $time = Storage::disk('public')->lastModified($file->path . "/" . $file->real_name);
                 else
                     $time = false;
+
+                // Создание ссылок на миниатюры
+                if ($file->thumb_litle) {
+                    $file->thumb_litle = Storage::disk('public')->url($file->thumb_paht . "/" . $file->thumb_litle);
+                    $file->thumb_middle = Storage::disk('public')->url($file->thumb_paht . "/" . $file->thumb_middle);
+                }
 
                 $file->time = $time ? date("d.m.Y H:i:s", $time) : false;
 

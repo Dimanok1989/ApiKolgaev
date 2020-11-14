@@ -44,11 +44,20 @@ class Images extends Controller
     public $echo = false;
 
     /**
+     * Пауза между обработкой файлов
+     * 
+     * @var int
+     */
+    public $sleep = 4;
+
+    /**
      * Определение параметров
      */
     public function __construct($echo = false) {
 
         $this->echo = $echo;
+        
+        $this->sleep = (int) env('SLEEP_CREATE_THUMBS', 4);
 
     }
 
@@ -64,7 +73,7 @@ class Images extends Controller
         $start = $last = microtime(true); // Время старта
         $count = 0; // Счетчик прохода цикла
 
-        while ($start > time() - 5) {
+        while ($start > time() - 57) {
 
             if ($process = $this->resizeFile())
                 $data[] = $process;
@@ -72,7 +81,9 @@ class Images extends Controller
             $last = microtime(true);
 
             $count++;
-            sleep(4); // Пауза для кменьшения нагрузки
+
+            if ($this->sleep > 0)
+                sleep($this->sleep); // Пауза для уменьшения нагрузки
 
         }
 
@@ -190,6 +201,7 @@ class Images extends Controller
 
         \App\Events\Disk::dispatch([
             'thumbnails' => [
+                'id' => $file->id,
                 'litle' => Storage::disk('public')->url($dir . "/" . $nameLitle),
                 'middle' => Storage::disk('public')->url($dir . "/" . $nameMiddle),
             ],

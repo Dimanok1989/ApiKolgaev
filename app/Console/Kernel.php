@@ -27,7 +27,7 @@ class Kernel extends ConsoleKernel
         // $schedule->command('inspire')->hourly();
 
         // Создание миниатюр
-        $schedule->command('minute:thumbnails')->everyMinute();
+        // $schedule->command('minute:thumbnails')->everyMinute();
 
     }
 
