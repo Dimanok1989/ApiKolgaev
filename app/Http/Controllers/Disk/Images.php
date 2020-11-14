@@ -37,6 +37,22 @@ class Images extends Controller
     public $middle = 1600;
 
     /**
+     * Определение вывода результата
+     * 
+     * @var bool
+     */
+    public $echo = false;
+
+    /**
+     * Определение параметров
+     */
+    public function __construct($echo = false) {
+
+        $this->echo = $echo;
+
+    }
+
+    /**
      * Запуск цикла в работу в течение 1 минуты для повторного выполнения кроной
      * 
      * @return array
@@ -48,9 +64,11 @@ class Images extends Controller
         $start = $last = microtime(true); // Время старта
         $count = 0; // Счетчик прохода цикла
 
-        while ($start > time() - 60) {
+        while ($start > time() - 5) {
 
-            $data[] = $this->resizeFile();
+            if ($process = $this->resizeFile())
+                $data[] = $process;
+
             $last = microtime(true);
 
             $count++;
@@ -58,8 +76,17 @@ class Images extends Controller
 
         }
 
+        $time = round(microtime(true) - $start, 2);
+
+        if ($this->echo) {
+            $files = count($data ?? []);
+            echo "\033[1;33m" . "Обработано файлов {$files}\n";
+            echo "\033[0;37m" . "Выполнено за $time сек\n";
+            return null;
+        }
+
         return response([
-            'time' => microtime(true) - $start,
+            'time' => $time,
             'count' => $count,
             'data' => $data ?? [],
         ]);
@@ -168,6 +195,11 @@ class Images extends Controller
             ],
             'user' => (int) $file->user,
         ]);
+
+        if ($this->echo) {
+            echo "\033[32m" . "Создан эскиз фото {$file->path}/{$file->name}.{$file->ext}\n";
+            return true;
+        }
 
         return [
             'file' => $filerow,
