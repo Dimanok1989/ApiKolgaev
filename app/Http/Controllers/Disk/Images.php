@@ -220,4 +220,51 @@ class Images extends Controller
 
     }
 
+    /**
+     * Метод поиска и удаления дубликатов созданных миниатюр
+     * В момент завершения предыдущего выполнения скрипта и начала
+     * нового затрагивался один и тотже файл
+     */
+    public function removeDuplicateThumbnails() {
+
+        $files = \DB::select(\DB::raw('SELECT `file_id`, COUNT(*) c FROM disk_files_thumbnails GROUP BY `file_id` HAVING c > 1'));
+
+        $ids = [];
+        foreach ($files as $file)
+            $ids[] = $file->file_id;
+
+        if (!count($ids)) {
+            echo "\033[0;33m" . "Дубликатов не найдено\n";
+            return true;
+        }
+
+        $rows = DiskFilesThumbnail::whereIn('file_id', $ids)->get();
+
+        foreach ($rows as $row)
+            $thumbs[$row->file_id] = $row;
+
+        foreach ($thumbs as $thumb) {
+            
+            if (Storage::disk('public')->delete($thumb->paht . "/" . $thumb->litle))
+                echo "\033[32m" . "Файл {$thumb->paht}/{$thumb->litle} удален\n";
+            else
+                echo "\033[31m" . "Файл {$thumb->paht}/{$thumb->litle} не найден\n";
+
+            if (Storage::disk('public')->delete($thumb->paht . "/" . $thumb->middle))
+                echo "\033[32m" . "Файл {$thumb->paht}/{$thumb->middle} удален\n";
+            else
+                echo "\033[31m" . "Файл {$thumb->paht}/{$thumb->middle} не найден\n";
+
+            DiskFilesThumbnail::where('id', $thumb->id)->limit(1)->delete();
+
+            echo "\n";
+
+        }
+
+        echo "\033[0;37m" . "Поиск дубликатов завершен\n";
+
+        return true;
+
+    }
+
 }

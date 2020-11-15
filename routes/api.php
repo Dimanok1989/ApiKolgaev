@@ -46,6 +46,8 @@ Route::group([
     Route::post('/showImage', 'Disk\MainDataDisk@showImage');
 });
 
+Route::get('/ttttttt', 'Disk\Images@removeDuplicateThumbnails');
+
 // Route::post('/disk/uploadFile', 'Disk\UploadFile@upload')->middleware('auth:api');
 
 /**

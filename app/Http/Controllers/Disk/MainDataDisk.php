@@ -129,7 +129,7 @@ class MainDataDisk extends Controller
         $dirs = []; // Список каталогов
         $files = []; // Список файлов
 
-        $data = DiskFile::select(
+        $rows = DiskFile::select(
             'disk_files.*',
             'disk_files_thumbnails.paht as thumb_paht',
             'disk_files_thumbnails.litle as thumb_litle',
@@ -143,8 +143,10 @@ class MainDataDisk extends Controller
         ])
         ->leftjoin('disk_files_thumbnails', 'disk_files_thumbnails.file_id', '=', 'disk_files.id')
         ->orderBy('name')
-        ->distinct()
         ->get();
+
+        foreach ($rows as $row)
+            $data[$row->id] = $row;
 
         foreach ($data as $file) {
 
