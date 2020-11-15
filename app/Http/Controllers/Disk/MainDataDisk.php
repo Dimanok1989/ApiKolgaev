@@ -143,6 +143,7 @@ class MainDataDisk extends Controller
         ])
         ->leftjoin('disk_files_thumbnails', 'disk_files_thumbnails.file_id', '=', 'disk_files.id')
         ->orderBy('name')
+        ->distinct()
         ->get();
 
         foreach ($data as $file) {

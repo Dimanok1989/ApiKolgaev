@@ -73,7 +73,7 @@ class Images extends Controller
         $start = $last = microtime(true); // Время старта
         $count = 0; // Счетчик прохода цикла
 
-        while ($start > time() - 57) {
+        while ($start > time() - 50) {
 
             if ($process = $this->resizeFile())
                 $data[] = $process;
