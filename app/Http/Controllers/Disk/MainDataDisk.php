@@ -129,7 +129,7 @@ class MainDataDisk extends Controller
         $dirs = []; // Список каталогов
         $files = []; // Список файлов
 
-        $rows = DiskFile::select(
+        $data = DiskFile::select(
             'disk_files.*',
             'disk_files_thumbnails.paht as thumb_paht',
             'disk_files_thumbnails.litle as thumb_litle',
@@ -142,11 +142,9 @@ class MainDataDisk extends Controller
             ['delete_query', NULL],
         ])
         ->leftjoin('disk_files_thumbnails', 'disk_files_thumbnails.file_id', '=', 'disk_files.id')
+        ->orderBy('is_dir', 'DESC')
         ->orderBy('name')
-        ->get();
-
-        foreach ($rows as $row)
-            $data[$row->id] = $row;
+        ->paginate(72);
 
         foreach ($data as $file) {
 
@@ -205,6 +203,8 @@ class MainDataDisk extends Controller
             'files' => $files,
             'cd' => "",
             'paths' => array_reverse($paths),
+            'next' => $data->currentPage() + 1,
+            'last' => $data->lastPage(),
         ]);
 
     }
@@ -365,6 +365,12 @@ class MainDataDisk extends Controller
 
     }
 
+    /**
+     * Метод возвращает ссылку на изображение среднего качества для его просмотра на сайте
+     * 
+     * @param Illuminate\Http\Request $request
+     * @return response
+     */
     public static function showImage(Request $request) {
 
         $file = DiskFile::select(
@@ -383,7 +389,7 @@ class MainDataDisk extends Controller
         ->get();
 
         if (!count($file))
-            return response(['message' => "Файл не найден"], 400);
+            return response(['message' => "Фото не найдено или еще не обработано"], 400);
 
         return response([
             'link' => Storage::disk('public')->url($file[0]->thumb_paht . "/" . $file[0]->thumb_middle),

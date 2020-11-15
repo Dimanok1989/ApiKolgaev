@@ -244,13 +244,19 @@ class Images extends Controller
             $thumbs[$row->file_id] = $row;
 
         foreach ($thumbs as $thumb) {
+
+            echo "\033[0;37m" . "Файл {$thumb->file_id}\n";
+
+            $rm = unlink(storage_path('app/public/' . $thumb->paht . "/" . $thumb->litle));
             
-            if (Storage::disk('public')->delete($thumb->paht . "/" . $thumb->litle))
+            if ($rm)
                 echo "\033[32m" . "Файл {$thumb->paht}/{$thumb->litle} удален\n";
             else
                 echo "\033[31m" . "Файл {$thumb->paht}/{$thumb->litle} не найден\n";
 
-            if (Storage::disk('public')->delete($thumb->paht . "/" . $thumb->middle))
+            $rm = unlink(storage_path('app/public/' . $thumb->paht . "/" . $thumb->middle));
+
+            if ($rm)
                 echo "\033[32m" . "Файл {$thumb->paht}/{$thumb->middle} удален\n";
             else
                 echo "\033[31m" . "Файл {$thumb->paht}/{$thumb->middle} не найден\n";
