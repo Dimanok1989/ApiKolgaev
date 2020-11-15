@@ -43,6 +43,7 @@ Route::group([
     Route::post('/download', 'Disk\DownloadFile@download');
     Route::post('/addFileToZip', 'Disk\DownloadFile@addFileToZip');
     Route::post('/deleteFile', 'Disk\MainDataDisk@deleteFile');
+    Route::post('/showImage', 'Disk\MainDataDisk@showImage');
 });
 
 // Route::post('/disk/uploadFile', 'Disk\UploadFile@upload')->middleware('auth:api');

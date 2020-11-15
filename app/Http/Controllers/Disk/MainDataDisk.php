@@ -362,4 +362,31 @@ class MainDataDisk extends Controller
 
     }
 
+    public static function showImage(Request $request) {
+
+        $file = DiskFile::select(
+            'disk_files.*',
+            'disk_files_thumbnails.paht as thumb_paht',
+            'disk_files_thumbnails.litle as thumb_litle',
+            'disk_files_thumbnails.middle as thumb_middle'
+        )
+        ->where([
+            ['disk_files.id', $request->id],
+            ['deleted_at', NULL],
+            ['delete_query', NULL],
+        ])
+        ->join('disk_files_thumbnails', 'disk_files_thumbnails.file_id', '=', 'disk_files.id')
+        ->limit(1)
+        ->get();
+
+        if (!count($file))
+            return response(['message' => "Файл не найден"], 400);
+
+        return response([
+            'link' => Storage::disk('public')->url($file[0]->thumb_paht . "/" . $file[0]->thumb_middle),
+            'name' => $file[0]->name,
+        ]);
+
+    }
+
 }
