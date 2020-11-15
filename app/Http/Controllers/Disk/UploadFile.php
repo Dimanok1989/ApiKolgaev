@@ -90,7 +90,7 @@ class UploadFile extends Controller
         return response([
             'hash' => $file->real_name,
             'path' => $file->path,
-            'size' => filesize(storage_path('app/public/' . $dir . "/" . $file->real_name)),
+            'size' => Storage::disk('public')->size($dir . "/" . $file->real_name),
             'file' => $request->endchunk ? $file : false,
         ]);
 
