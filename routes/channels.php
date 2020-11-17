@@ -13,11 +13,11 @@ use Illuminate\Support\Facades\Broadcast;
 |
 */
 
-Broadcast::channel('App.User.{id}', function ($user, $id) {
-    return (int) $user->id === (int) $id;
+/** Канал присутствия Диска */
+Broadcast::channel('App.Disk', function ($user) {
+    return ['id' => $user->id];
 });
 
-Route::match(['get', 'post'], 'polling', function(Request $request) {
-    return App\Events\Disk\DeleteFile::dispatch($request->input('body'));
-    // broadcast(new \App\Events\Message);
-});
+// Broadcast::channel('App.User.{id}', function ($user, $id) {
+//     return (int) $user->id === (int) $id;
+// });

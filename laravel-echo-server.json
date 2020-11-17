@@ -1,6 +1,6 @@
 {
-	"authHost": "http://127.0.0.1",
-	"authEndpoint": "/broadcasting/auth",
+	"authHost": "https://api.kolgaev.lan",
+	"authEndpoint": "/api/broadcasting/auth",
 	"clients": [],
 	"database": "redis",
 	"databaseConfig": {

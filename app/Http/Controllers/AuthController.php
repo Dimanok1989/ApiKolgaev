@@ -81,7 +81,10 @@ class AuthController extends Controller
 
     public static function user(Request $request) {
 
-        return Auth::user();
+        $user = Auth::user();
+        $user->csrf = csrf_token();
+
+        return $user;
 
     }
 

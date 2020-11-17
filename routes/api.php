@@ -26,6 +26,12 @@ Route::group(['prefix' => 'auth'], function () {
     Route::match(['get','post'], '/getUserMenu', 'AuthController@getUserMenu')->middleware('auth:api');
 });
 
+/** Авторизация на канале широковещания */
+Route::middleware('auth:api')
+->match(['get','post'], '/broadcasting/auth', function (Request $request) {
+    return \Illuminate\Support\Facades\Broadcast::auth($request);
+});
+
 Route::group([
     'prefix' => 'disk',
     'middleware' => [
@@ -46,7 +52,10 @@ Route::group([
     Route::post('/showImage', 'Disk\MainDataDisk@showImage');
 });
 
-Route::get('/ttttttt', 'Disk\Images@removeDuplicateThumbnails');
+Route::get('/ttttttt', function() {
+    echo \Crypt::encryptString('123');
+    \App\Events\DiskOnline::dispatch([123, 456]);
+});
 
 // Route::post('/disk/uploadFile', 'Disk\UploadFile@upload')->middleware('auth:api');
 
