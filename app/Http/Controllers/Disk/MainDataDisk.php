@@ -89,17 +89,26 @@ class MainDataDisk extends Controller
             $size += (int) $row->size;
         }
 
-        foreach ($users as &$user) {
-            
-            $user->size = $sizes[$user->id] ?? 0;
-            $user->sizeFormat = parent::formatSize($user->size);
+        $usersList = [];
+        foreach ($users as $user) {
+
+            $usersList[] = [
+                'id' => $user->id,
+                'email' => $user->email,
+                'name' => $user->name,
+                'surname' => $user->surname,
+                'patronymic' => $user->patronymic,
+                'login' => $user->login,
+                'size' => $sizes[$user->id] ?? 0,
+                'sizeFormat' => parent::formatSize($sizes[$user->id] ?? 0),
+            ];
 
         }
 
         $free = self::$limit - $size;
 
         return response([
-            'users' => $users,
+            'users' => $usersList,
             'sizes' => [
                 'size' => $size,
                 'sizeFormat' => parent::formatSize($size),

@@ -41,6 +41,9 @@ class Controller extends BaseController
 	 */
 	public static function formatSize($size) {
 
+        if ($size == 0)
+            return "0";
+
 		$metrics = [
 			0 => 'байт',
 			1 => 'Кб',

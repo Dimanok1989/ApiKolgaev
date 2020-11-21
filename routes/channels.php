@@ -15,7 +15,20 @@ use Illuminate\Support\Facades\Broadcast;
 
 /** Канал присутствия Диска */
 Broadcast::channel('App.Disk', function ($user) {
-    return ['id' => $user->id];
+
+    if ($user->hasPermissionViaRole(['disk']) OR $user->hasPermission(['disk'])) {
+        return [
+            'id' => $user->id,
+            'email' => $user->email,
+            'name' => $user->name,
+            'surname' => $user->surname,
+            'patronymic' => $user->patronymic,
+            'login' => $user->login,
+        ];
+    }
+
+    return false;
+
 });
 
 // Broadcast::channel('App.User.{id}', function ($user, $id) {

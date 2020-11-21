@@ -24,15 +24,15 @@ class AuthController extends Controller
     public static function login(Request $request) {
 
         if (Auth::attempt(['email' => $request->email, 'password' => $request->password]))
-            return self::loginDone();
+            return self::loginDone($request);
 
         $login = $request->email;
         if (Auth::attempt(['login' => $login, 'password' => $request->password]))
-            return self::loginDone();
+            return self::loginDone($request);
 
         $phone = $request->email;
         if (Auth::attempt(['phone' => $phone, 'password' => $request->password]))
-            return self::loginDone();
+            return self::loginDone($request);
 
         return response([
             'message' => "Неверный логин или пароль",
@@ -46,9 +46,16 @@ class AuthController extends Controller
      * @param Illuminate\Http\Request $request
      * @return response
      */
-    public static function loginDone() {
+    public static function loginDone(Request $request) {
 
         $user = Auth::user();
+
+        // Проверка доступа к разделам
+        $checkPartAccess = self::checkPartAccess($request->part, $user);
+
+        if (!$checkPartAccess)
+            return response(['message' => "Доступ ограничен"], 403);
+
         $token = $user->createToken('app')->accessToken;
 
         return response([
@@ -99,7 +106,7 @@ class AuthController extends Controller
         $userRole->user_role_id = 1;
         $userRole->save();
 
-        return self::loginDone();
+        return self::loginDone($request);
 
     }
 
@@ -111,10 +118,39 @@ class AuthController extends Controller
      */
     public static function user(Request $request) {
 
-        $user = Auth::user();
-        $user->csrf = csrf_token();
+        // Проверка доступа к разделам
+        $checkPartAccess = self::checkPartAccess($request->part, $request->user());
 
-        return $user;
+        if (!$checkPartAccess) {
+            return response([
+                'message' => "Доступ ограничен",
+                'user' => $request->user(),
+            ], 403);
+        }
+
+        return response([
+            'message' => "Доступ разрешен",
+            'user' => $request->user()
+        ]);
+
+    }
+
+    /**
+     * Метод проверки доступа к разделам сайта
+     * 
+     * @param string|null $part Тектовый идентификатор раздела
+     * @param object $user Объект данных пользователя
+     * @return bool
+     */
+    public static function checkPartAccess($part, $user) {
+
+        if (!$part)
+            return true;
+
+        if ($part AND ($user->hasPermissionViaRole([$part]) OR $user->hasPermission([$part])))
+            return true;
+
+        return false;
 
     }
 
