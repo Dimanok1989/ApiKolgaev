@@ -267,7 +267,7 @@ class MainDataDisk extends Controller
         \App\Events\Disk::dispatch((object) [
             'mkdir' => $file,
             'user' => (int) $file->user,
-            'socketId' => $request->header('Socket-Id'),
+            'socketId' => $request->header('X-Socket-Id'),
         ]);
 
         return response([
@@ -327,7 +327,7 @@ class MainDataDisk extends Controller
         \App\Events\Disk::dispatch([
             'rename' => $file,
             'user' => (int) $file->user,
-            'socketId' => $request->header('Socket-Id'),
+            'socketId' => $request->header('X-Socket-Id'),
         ]);
         
         return response([
@@ -356,7 +356,7 @@ class MainDataDisk extends Controller
         \App\Events\Disk::dispatch([
             'delete' => $file,
             'user' => (int) $file->user,
-            'socketId' => $request->header('Socket-Id'),
+            'socketId' => $request->header('X-Socket-Id'),
         ]);
 
         return response([

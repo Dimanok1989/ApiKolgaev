@@ -15,6 +15,12 @@ use App\Models\Users\UsersUserRole;
 class AuthController extends Controller
 {
     
+    /**
+     * Авторизация пользователя
+     * 
+     * @param Illuminate\Http\Request $request
+     * @return response
+     */
     public static function login(Request $request) {
 
         if (Auth::attempt(['email' => $request->email, 'password' => $request->password]))
@@ -34,6 +40,12 @@ class AuthController extends Controller
 
     }
 
+    /**
+     * Завершение авторизации пользователя
+     * 
+     * @param Illuminate\Http\Request $request
+     * @return response
+     */
     public static function loginDone() {
 
         $user = Auth::user();
@@ -47,6 +59,12 @@ class AuthController extends Controller
 
     }
 
+    /**
+     * Выход пользователя, удаление токена
+     * 
+     * @param Illuminate\Http\Request @request
+     * @return response
+     */
     public static function logout(Request $request) {
 
         Auth::user()->token()->revoke();
@@ -58,6 +76,12 @@ class AuthController extends Controller
 
     }
 
+    /**
+     * Регистрация нового пользователя
+     * 
+     * @param Illuminate\Http\Request @request
+     * @return response
+     */
     public static function registration(RegisterRequest $request) {
 
         $user = User::create([
@@ -79,6 +103,12 @@ class AuthController extends Controller
 
     }
 
+    /**
+     * Данные пользователя при успешной проверки авторизации
+     * 
+     * @param Illuminate\Http\Request @request
+     * @return response
+     */
     public static function user(Request $request) {
 
         $user = Auth::user();
@@ -90,6 +120,9 @@ class AuthController extends Controller
 
     /**
      * Метод формирования пунктов меню
+     * 
+     * @param Illuminate\Http\Request @request
+     * @return response
      */
     public static function getUserMenu(Request $request) {
 

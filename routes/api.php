@@ -19,11 +19,11 @@ Route::middleware('auth:api')->match(['get','post'], '/user', function (Request 
 });
 
 Route::group(['prefix' => 'auth'], function () {
-    Route::match(['get','post'], '/registration', 'AuthController@registration');
-    Route::match(['get','post'], '/login', 'AuthController@login');
-    Route::match(['get','post'], '/logout', 'AuthController@logout')->middleware('auth:api');
-    Route::match(['get','post'], '/user', 'AuthController@user')->middleware('auth:api');
-    Route::match(['get','post'], '/getUserMenu', 'AuthController@getUserMenu')->middleware('auth:api');
+    Route::post('/registration', 'AuthController@registration');
+    Route::post('/login', 'AuthController@login');
+    Route::post('/logout', 'AuthController@logout')->middleware('auth:api');
+    Route::post('/user', 'AuthController@user')->middleware('auth:api');
+    Route::post('/getUserMenu', 'AuthController@getUserMenu')->middleware('auth:api');
 });
 
 /** Авторизация на канале широковещания */
@@ -78,7 +78,7 @@ Route::group([
 });
 
 /**
- * Раздел расхода топлива
+ * Раздел админ панели
  */
 Route::group([
     'prefix' => 'admin',

@@ -82,7 +82,7 @@ class UploadFile extends Controller
             \App\Events\Disk::dispatch([
                 'new' => $file,
                 'user' => (int) $file->user,
-                'socketId' => $request->header('Socket-Id'),
+                'socketId' => $request->header('X-Socket-Id'),
             ]);
             
         }
