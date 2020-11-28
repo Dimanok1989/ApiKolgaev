@@ -6,6 +6,12 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
 use App\User;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\Models\Permission;
+use App\Models\Users\RoleHasPermission;
+use App\Models\Users\ModelHasPermission;
+use App\Models\Users\ModelHasRole;
+
 use App\Models\Users\UserRoles;
 use App\Models\Users\UserPermissions;
 use App\Models\Users\UserRolesUserPermission;
@@ -14,49 +20,343 @@ use App\Models\Users\UsersUserPermission;
 
 class Users extends Controller
 {
+
+    /**
+     * Метод формирования массива охранников
+     * 
+     * @return array
+     */
+    public static function getGuards() {
+
+        foreach (config('auth.guards') as $guard => $array) {
+            $guards[] = ['guard_name' => $guard];
+        }
+
+        return $guards ?? [];
+
+    }
     
     /**
-     * Получение списка групп пользователей
+     * Получение списка ролей пользователей
+     * 
+     * @param Illuminate\Http\Request $request
+     * @return response
      */
     public static function getRoles(Request $request) {
 
-        $roles = UserRoles::orderBy('name')->get();
+        $roles = Role::orderBy('guard_name')->orderBy('name')->get();
 
-        $count = UsersUserRole::select(
-            \DB::raw('COUNT(*) as count, user_role_id')
-        )
-        ->groupBy('user_role_id')->get();
+        // Количество пользователей
+        $counts = ModelHasRole::select(\DB::raw('COUNT(*) as count, role_id'))
+        ->groupBy('role_id')->get();
 
-        $counts = [];
-        foreach ($count as $row)
-            $counts[$row->user_role_id] = $row->count;
+        foreach ($counts as $count) {
+            $users[$count->role_id] = $count->count;
+        }
 
-        foreach ($roles as &$role)
-            $role->count = $counts[$role->id] ?? 0;
+        // Количество прав
+        $counts = RoleHasPermission::select(\DB::raw('COUNT(*) as count, role_id'))
+        ->groupBy('role_id')->get();
+
+        foreach ($counts as $count) {
+            $rights[$count->role_id] = $count->count;
+        }
+
+        foreach ($roles as &$role) {
+
+            $role->created = parent::createDate($role->created_at);
+            $role->updated = parent::createDate($role->updated_at);
+
+            $role->users = $users[$role->id] ?? 0;
+            $role->rights = $rights[$role->id] ?? 0;
+
+        }
 
         return response([
             'roles' => $roles,
+            'guards' => self::getGuards() ?? ['guard_name' => "api"],
+        ]);
+
+    }
+
+    /**
+     * Метод вывод данных роли
+     * 
+     * @param Illuminate\Http\Request $request
+     * @return response
+     */
+    public static function getRoleData(Request $request) {
+
+        if (!$role = Role::find($request->id))
+            return response(['message' => "Роль не найдена"], 400);
+
+        // Все права
+        $permissions = Permission::where('guard_name', $role->guard_name)->orderBy('name')->get();
+
+        // Отмеченные права
+        $checked = [];
+        foreach (RoleHasPermission::where('role_id', $role->id)->get() as $row) {
+            $checked[] = $row->permission_id;
+        }
+
+        foreach ($permissions as &$permission) {
+            $permission->checked = in_array($permission->id, $checked);
+        }
+
+        return response([
+            'name' => $role->name,
+            'permissions' => $permissions ?? [],
+        ]);
+
+    }
+
+    /**
+     * Установка прав роли
+     * 
+     * @param Illuminate\Http\Request $request
+     * @return response
+     */
+    public static function setPermissionToRole(Request $request) {
+
+        if (!$role = Role::find($request->role))
+            return response(['message' => "Роли не существует"], 400);
+
+        if (!$permission = Permission::find($request->permission))
+            return response(['message' => "Право не существует"], 400);
+
+        if ($request->checked === null)
+            return response(['message' => "Чекбокс не определен"], 400);
+
+        if ($request->checked === true)
+            $set = $role->givePermissionTo($permission->name);
+        elseif ($request->checked === false)
+            $set = $role->revokePermissionTo($permission->name);
+
+        return response([
+            'checked' => $request->checked,
         ]);
 
     }
 
     /**
      * Получение списка прав
+     * 
+     * @param Illuminate\Http\Request $request
+     * @return response
      */
     public static function getPermissions(Request $request) {
 
-        $permissions = UserPermissions::orderBy('slug')->orderBy('name')->get();
-        $access = UserRolesUserPermission::where('user_role_id', $request->id)->get();
+        $permissions = Permission::orderBy('guard_name')->orderBy('name')->get();
 
-        $permission_id = [];
-        foreach ($access as $row)
-            $permission_id[] = $row->user_permission_id;
+        // Количество пользователей, имеющих право
+        $counts = ModelHasPermission::select(\DB::raw('COUNT(*) as count, permission_id'))
+        ->groupBy('permission_id')->get();
 
-        foreach ($permissions as &$row)
-            $row->access = in_array($row->id, $permission_id);
+        foreach ($counts as $count) {
+            $users[$count->permission_id] = $count->count;
+        }
+
+        // Количество ролей, имеющих право
+        $counts = RoleHasPermission::select(\DB::raw('COUNT(*) as count, permission_id'))
+        ->groupBy('permission_id')->get();
+
+        foreach ($counts as $count) {
+            $rights[$count->permission_id] = $count->count;
+        }
+
+        foreach ($permissions as &$permit) {
+
+            $permit->created = parent::createDate($permit->created_at);
+            $permit->updated = parent::createDate($permit->updated_at);
+
+            $permit->users = $users[$permit->id] ?? 0;
+            $permit->rights = $rights[$permit->id] ?? 0;
+
+        }
 
         return response([
+            'permissions' => $permissions ?? [],
+            'guards' => self::getGuards() ?? ['guard_name' => "api"],
+        ]);
+
+    }
+
+    /**
+     * Создание нового права
+     * 
+     * @param Illuminate\Http\Request $request
+     * @return response
+     */
+    public static function createPermission(Request $request) {
+
+        if (!$request->name)
+            return response(['message' => "Не указано значение права"], 400);
+
+        if (!$request->guard_name)
+            return response(['message' => "Не выбран оххранник права"], 400);
+
+        $count = Permission::where([
+            ['name', $request->name],
+            ['guard_name', $request->guard_name],
+        ])->count();
+
+        if ($count)
+            return response(['message' => "Такое сочетание права и охранника уже создано"], 400);
+
+        $permission = Permission::create([
+            'name' => $request->name,
+            'guard_name' => $request->guard_name,
+        ]);
+
+        $permission->created = parent::createDate($permission->created_at);
+        $permission->updated = parent::createDate($permission->updated_at);
+        $permission->users = 0;
+        $permission->rights = 0;
+
+        return response([
+            'permission' => $permission,
+        ]);
+
+    }
+
+    /**
+     * Поиск пользователей
+     * 
+     * @param Illuminate\Http\Request $request
+     * @return response
+     */
+    public static function getUsers(Request $request) {
+
+        $phone = parent::getPhone($request->search, false);
+
+        $users = User::where(function($query) use ($request, $phone) {
+
+            $query->where('email', 'LIKE', "%{$request->search}%")
+                ->orWhere('login', 'LIKE', "%{$request->search}%")
+                ->orWhere('surname', 'LIKE', "%{$request->search}%")
+                ->orWhere('name', 'LIKE', "%{$request->search}%")
+                ->orWhere('patronymic', 'LIKE', "%{$request->search}%");
+
+            if ($phone)
+                $query->orWhere('phone', 'LIKE', "%{$phone}%");
+
+        });
+
+        if (!$request->search)
+            $users = $users->orderBy('id', 'DESC')->limit(10);
+
+        $users = $users->get();
+
+        foreach ($users as &$user) {
+            
+            $user->visit = $user->last_visit ? parent::createDate($user->last_visit) : null;
+            $user->roles = $user->getRoleNames();
+
+        }
+
+        return response([
+            'users' => $users ?? [],
+        ]);
+
+    }
+
+    /**
+     * Метод вывода данных по одному пользователю
+     * 
+     * @param Illuminate\Http\Request $request
+     * @return response
+     */
+    public static function getUserdata(Request $request) {
+
+        if (!$user = User::find($request->id))
+            return response(['message' => "Пользователь не найден"], 400);
+
+        $user->visit = $user->last_visit ? parent::createDate($user->last_visit) : null;
+
+        // Права пользователя
+        foreach ($user->permissions as $permit) {
+            $userPermissions[] = [
+                'id' => $permit->id,
+                'guard_name' => $permit->guard_name,
+                'name' => $permit->name,
+            ];
+        }
+
+        // Все права
+        $permissions = Permission::orderBy('guard_name')->orderBy('name')->get();
+
+        // Роли пользователя
+        foreach ($user->roles as $role) {
+            $userRoles[] = [
+                'id' => $role->id,
+                'guard_name' => $role->guard_name,
+                'name' => $role->name,
+            ];
+        }
+
+        // Все права
+        $roles = Role::orderBy('guard_name')->orderBy('name')->get();
+
+        return response([
+            'user' => $user,
+            'userPermissions' => $userPermissions ?? [],
             'permissions' => $permissions,
+            'userRoles' => $userRoles ?? [],
+            'roles' => $roles,
+        ]);
+
+    }
+
+    /**
+     * Установка роли пользователю
+     * 
+     * @param Illuminate\Http\Request $request
+     * @return response
+     */
+    public static function setRoleToUser(Request $request) {
+
+        if (!$user = User::find($request->user))
+            return response(['message' => "Пользователь не найден"], 400);
+
+        if ($request->checked == true) {
+            $user->assignRole($request->role);
+            $message = "Роль выдана пользователю";
+        }
+        else {
+            $user->removeRole($request->role);
+            $message = "Роль отозвана у пользователя";
+        }
+
+        return response([
+            'message' => $message ?? "Настройка применена",
+            'checked' =>  $request->checked,
+        ]);
+
+    }
+
+    /**
+     * Установка права пльзователю
+     * 
+     * @param Illuminate\Http\Request $request
+     * @return response
+     */
+    public static function setPermissionToUser(Request $request) {
+
+        if (!$user = User::find($request->user))
+            return response(['message' => "Пользователь не найден"], 400);
+
+        if ($request->checked == true) {
+            $user->givePermissionTo($request->permission);
+            $message = "Право выдано пользователю";
+        }
+        else {
+            $user->revokePermissionTo($request->permission);
+            $message = "Право отозвано у пользователя";
+        }
+
+        return response([
+            'message' => $message ?? "Настройка применена",
+            'checked' =>  $request->checked,
         ]);
 
     }
@@ -138,7 +438,7 @@ class Users extends Controller
     /**
      * Получение данных пользователя для установки индивидуальных прав
      */
-    public static function getUserData(Request $request) {
+    public static function getUserDataOld(Request $request) {
 
         // Проверка пользователя
         if (!$user = User::find($request->id))

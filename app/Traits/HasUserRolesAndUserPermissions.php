@@ -36,7 +36,7 @@ trait HasUserRolesAndUserPermissions
      * @param mixed ...$roles
      * @return bool
      */
-    public function hasRole(... $roles) {
+    public function hasRole(...$roles) {
 
         return $this->hasRoles($roles);
 
@@ -73,7 +73,7 @@ trait HasUserRolesAndUserPermissions
      * @param $permission
      * @return bool
      */
-    public function hasPermissionTo(... $permission) {
+    public function hasPermissionTo(...$permission) {
 
         return $this->hasPermission($permission);
 
@@ -118,7 +118,7 @@ trait HasUserRolesAndUserPermissions
      * @param mixed ...$permissions
      * @return $this
      */
-    public function givePermissionsTo(... $permissions) {
+    public function givePermissionsTo(...$permissions) {
 
         $permissions = $this->getAllPermissions($permissions);
         
@@ -136,7 +136,7 @@ trait HasUserRolesAndUserPermissions
      * @param mixed ...$permissions
      * @return $this
      */
-    public function deletePermissions(... $permissions) {
+    public function deletePermissions(...$permissions) {
 
         $permissions = $this->getAllPermissions($permissions);
         $this->permissions()->detach($permissions);
@@ -150,7 +150,7 @@ trait HasUserRolesAndUserPermissions
      * @param mixed ...$permissions
      * @return HasRolesAndPermissions
      */
-    public function refreshPermissions(... $permissions) {
+    public function refreshPermissions(...$permissions) {
 
         $this->permissions()->detach();
         return $this->givePermissionsTo($permissions);

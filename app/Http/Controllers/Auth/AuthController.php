@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -101,6 +101,8 @@ class AuthController extends Controller
 
         Auth::attempt(['email' => $request->email, 'password' => $request->password]);
 
+        Auth::user()->assignRole(1);
+
         $userRole = new UsersUserRole;
         $userRole->user_id = Auth::user()->id;
         $userRole->user_role_id = 1;
@@ -130,7 +132,7 @@ class AuthController extends Controller
 
         return response([
             'message' => "Доступ разрешен",
-            'user' => $request->user()
+            'user' => $request->user(),
         ]);
 
     }
@@ -147,7 +149,7 @@ class AuthController extends Controller
         if (!$part)
             return true;
 
-        if ($part AND ($user->hasPermissionViaRole([$part]) OR $user->hasPermission([$part])))
+        if ($part AND $user->can($part))
             return true;
 
         return false;

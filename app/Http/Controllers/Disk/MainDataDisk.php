@@ -74,7 +74,8 @@ class MainDataDisk extends Controller
     public static function getUsersList(Request $request) {
 
         // Поиск пользователей, доступным раздел диска
-        $users = User::getUsersListForDisk();
+        // $users = User::getUsersListForDisk();
+        $users = User::permission('disk')->get();
 
         $sizes = []; // Размер файлов по каждому пользователю
         $size = 0; // Общий объем файлов

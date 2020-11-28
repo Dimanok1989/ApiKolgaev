@@ -6,12 +6,14 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Passport\HasApiTokens;
-use App\Traits\HasUserRolesAndUserPermissions;
+// use App\Traits\HasUserRolesAndUserPermissions;
+use Spatie\Permission\Traits\HasRoles;
 use DB;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, Notifiable, HasUserRolesAndUserPermissions;
+    
+    use HasApiTokens, Notifiable, HasRoles;
 
     /**
      * Атрибуты, которые назначаются массово.

@@ -14,16 +14,16 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::middleware('auth:api')->match(['get','post'], '/user', function (Request $request) {
+Route::middleware(['auth:api', 'permission:disk'])->match(['get','post'], '/user', function (Request $request) {
     return $request->user();
 });
 
 Route::group(['prefix' => 'auth'], function () {
-    Route::post('/registration', 'AuthController@registration');
-    Route::post('/login', 'AuthController@login');
-    Route::post('/logout', 'AuthController@logout')->middleware('auth:api');
-    Route::post('/user', 'AuthController@user')->middleware('auth:api');
-    Route::post('/getUserMenu', 'AuthController@getUserMenu')->middleware('auth:api');
+    Route::post('/registration', 'Auth\AuthController@registration');
+    Route::post('/login', 'Auth\AuthController@login');
+    Route::post('/logout', 'Auth\AuthController@logout')->middleware('auth:api');
+    Route::post('/user', 'Auth\AuthController@user')->middleware('auth:api');
+    Route::post('/getUserMenu', 'Auth\AuthController@getUserMenu')->middleware('auth:api');
 });
 
 /** Авторизация на канале широковещания */
@@ -52,10 +52,10 @@ Route::group([
     Route::post('/showImage', 'Disk\MainDataDisk@showImage');
 });
 
-Route::get('/ttttttt', function() {
-    echo \Crypt::encryptString('123');
-    \App\Events\DiskOnline::dispatch([123, 456]);
-});
+// Route::get('/ttttttt', function() {
+//     echo \Crypt::encryptString('123');
+//     \App\Events\DiskOnline::dispatch([123, 456]);
+// });
 
 // Route::post('/disk/uploadFile', 'Disk\UploadFile@upload')->middleware('auth:api');
 
@@ -77,9 +77,7 @@ Route::group([
 
 });
 
-/**
- * Раздел админ панели
- */
+/** Раздел админ панели */
 Route::group([
     'prefix' => 'admin',
     'middleware' => [
@@ -88,20 +86,34 @@ Route::group([
     ],
 ], function() {
 
+    /** Управление пользователями, ролями и правами */
     Route::group([
         'prefix' => 'users',
-        'middleware' => 'permission:admin_users'
+        'middleware' => 'permission:admin.users'
     ], function() {
-
+        /** Список всех ролей */
         Route::post('/getRoles', 'Admin\Users@getRoles');
+        /** Данные одной роли */
+        Route::post('/getRoleData', 'Admin\Users@getRoleData');
+        /** Выдать права роли */
+        Route::post('/setPermissionToRole', 'Admin\Users@setPermissionToRole');
+        /** Список всех прав */
         Route::post('/getPermissions', 'Admin\Users@getPermissions');
-        Route::post('/setPermissionRole', 'Admin\Users@setPermissionRole');
-
-        Route::post('/getLastUsers', 'Admin\Users@getLastUsers');
+        /** Создание права */
+        Route::post('/createPermission', 'Admin\Users@createPermission');
+        /** Поиск пользователей */
+        Route::post('/getUsers', 'Admin\Users@getUsers');
+        /** Данные пользователя */
         Route::post('/getUserData', 'Admin\Users@getUserData');
-
-        Route::post('/setRole', 'Admin\Users@setRole');
-        Route::post('/setPermissionUser', 'Admin\Users@setPermissionUser');
+        /** Установка роли пользователю */
+        Route::post('/setRoleToUser', 'Admin\Users@setRoleToUser');
+        /** Установка права пльзователю */
+        Route::post('/setPermissionToUser', 'Admin\Users@setPermissionToUser');
+        
+        // Route::post('/setPermissionRole', 'Admin\Users@setPermissionRole');
+        // Route::post('/getLastUsers', 'Admin\Users@getLastUsers');
+        // Route::post('/setRole', 'Admin\Users@setRole');
+        // Route::post('/setPermissionUser', 'Admin\Users@setPermissionUser');
 
     });
 
