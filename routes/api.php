@@ -19,11 +19,18 @@ Route::middleware(['auth:api', 'permission:disk'])->match(['get','post'], '/user
 });
 
 Route::group(['prefix' => 'auth'], function () {
+    /** Регистрация нового пользователя */
     Route::post('/registration', 'Auth\AuthController@registration');
+    /** Авторизация пользователя */
     Route::post('/login', 'Auth\AuthController@login');
+    /** Деавторизация пользователя */
     Route::post('/logout', 'Auth\AuthController@logout')->middleware('auth:api');
+    /** Данные пользователя */
     Route::post('/user', 'Auth\AuthController@user')->middleware('auth:api');
+    /** Список пунктов меню пользователя */
     Route::post('/getUserMenu', 'Auth\AuthController@getUserMenu')->middleware('auth:api');
+    /** Изменение данных пользователя из личного кабинета */
+    Route::post('/saveUserData', 'Auth\Profile@saveUserData')->middleware('auth:api');
 });
 
 /** Авторизация на канале широковещания */

@@ -23,6 +23,12 @@ class AuthController extends Controller
      */
     public static function login(Request $request) {
 
+        if (!$request->email)
+            return response(['message' => "Введите e-mail, логин или номер телефона"], 400);
+
+        if (!$request->password)
+            return response(['message' => "Введите пароль"], 400);
+
         if (Auth::attempt(['email' => $request->email, 'password' => $request->password]))
             return self::loginDone($request);
 
