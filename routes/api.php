@@ -14,8 +14,10 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::middleware(['auth:api', 'permission:disk'])->match(['get','post'], '/user', function (Request $request) {
-    return $request->user();
+/** Авторизация на канале широковещания */
+Route::middleware('auth:api')
+->match(['get','post'], '/broadcasting/auth', function (Request $request) {
+    return \Illuminate\Support\Facades\Broadcast::auth($request);
 });
 
 Route::group(['prefix' => 'auth'], function () {
@@ -33,18 +35,9 @@ Route::group(['prefix' => 'auth'], function () {
     Route::post('/saveUserData', 'Auth\Profile@saveUserData')->middleware('auth:api');
 });
 
-/** Авторизация на канале широковещания */
-Route::middleware('auth:api')
-->match(['get','post'], '/broadcasting/auth', function (Request $request) {
-    return \Illuminate\Support\Facades\Broadcast::auth($request);
-});
-
 Route::group([
     'prefix' => 'disk',
-    'middleware' => [
-        'auth:api',
-        'permission:disk'
-    ],
+    'middleware' => ['auth:api', 'permission:disk']
 ], function() {
     Route::post('/getUsersList', 'Disk\MainDataDisk@getUsersList');
     Route::post('/getUserFiles', 'Disk\MainDataDisk@getUserFiles');

@@ -48,18 +48,31 @@ class Fuel extends Controller
 
     }
 
+    /**
+     * Метод вывода заправок по машине
+     * 
+     * @param Illuminate\Http\Request $request
+     * @return response
+     */
     public static function getFuelsCar(Request $request) {
 
         $limit = 30;
 
-        if (!$request->car)
+        if (!$request->id)
             return response(['message' => "Ошибка данных"], 400);
 
-        if (!$car = FuelCar::find($request->car))
+        if (!$car = FuelCar::find($request->id))
             return response(['message' => "Данные машины не найдены"], 400);
 
+        if ($request->user()->id != $car->user) {
+
+            if (!$request->user()->can('fuel.showAll'))
+                return response(['message' => "Доступ ограничен"], 403);
+
+        }
+
         // Заправки машины
-        $fuels = FuelRefueling::where('car', $request->car);
+        $fuels = FuelRefueling::where('car', $request->id);
 
         // Смещение строк для подгрузки данных
         if ($request->offset)
@@ -73,7 +86,7 @@ class Fuel extends Controller
             $fuel->date = date("d.m.Y", strtotime($fuel->date));
         }
 
-        $stat = self::getStatisticCar($request->car);
+        $stat = self::getStatisticCar($request->id);
         
         return response([
             'car' => $car,

@@ -36,8 +36,10 @@ class Profile extends Controller
                 $errors['email'] = "Неверный адрес электронной почты";
             else if (User::where('email', $request->email)->count())
                 $errors['email'] = "Этот адрес уже используется";
-            else
+            else {
                 $user->email = $request->email;
+                $user->email_verified_at = null;
+            }
 
         }
 

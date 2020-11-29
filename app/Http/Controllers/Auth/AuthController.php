@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
 use App\Http\Requests\RegisterRequest;
+use App\Http\Controllers\Auth\MenuPoints;
 
 use App\User;
 use App\Models\Users\UsersUserRole;
@@ -136,9 +137,14 @@ class AuthController extends Controller
             ], 403);
         }
 
+        // Формирование пунктов меню
+        if ($request->menu == true)
+            $menu = MenuPoints::getMenuPoints($request);
+
         return response([
             'message' => "Доступ разрешен",
             'user' => $request->user(),
+            'menu' => $menu ?? null,
         ]);
 
     }
