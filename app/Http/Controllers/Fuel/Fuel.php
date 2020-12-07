@@ -12,6 +12,44 @@ use App\Models\Fuel\FuelRefueling;
 
 class Fuel extends Controller
 {
+
+    /**
+     * Добавление новой машины
+     * 
+     * @param Illuminate\Http\Response $response
+     * @return response
+     */
+    public static function addNewCar(Request $request) {
+
+        $errors = [];
+
+        if (!$request->brand)
+            $errors[] = ['name' => "brand", 'message' => "Не указана марка машины"];
+
+        if (!$request->model)
+            $errors[] = ['name' => "model", 'message' => "Не указана модель машины"];
+
+        if (count($errors)) {
+            return response([
+                'message' => "Не заполнены обязательные поля",
+                'errors' => $errors
+            ], 400);
+        }
+
+        $car = FuelCar::create([
+            'user' => $request->user()->id,
+            'brand' => $request->brand,
+            'model' => $request->model,
+            'modification' => $request->modification,
+            'year' => $request->year,
+            'volume' => $request->volume,
+        ]);
+
+        return response([
+            'car' => $car,
+        ]);
+
+    }
     
     /**
      * Получение данных для главной страницы расхода топлива

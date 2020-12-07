@@ -1,10 +1,11 @@
 {
-    "name": "laravel/laravel",
+    "name": "kolgaev/api",
     "type": "project",
-    "description": "The Laravel Framework.",
+    "description": "API kolgaev.ru",
     "keywords": [
         "framework",
-        "laravel"
+        "laravel",
+        "kolgaev.ru"
     ],
     "license": "MIT",
     "require": {

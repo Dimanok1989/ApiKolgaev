@@ -64,11 +64,11 @@ Route::group([
  */
 Route::group([
     'prefix' => 'fuel',
-    'middleware' => [
-        'auth:api',
-        'permission:fuel'
-    ],
+    'middleware' => ['auth:api', 'permission:fuel'],
 ], function() {
+
+    /** Добавление новой машины */
+    Route::post('/addNewCar', 'Fuel\Fuel@addNewCar');
 
     Route::post('/getMainData', 'Fuel\Fuel@getMainData');
     Route::post('/getFuelsCar', 'Fuel\Fuel@getFuelsCar');
