@@ -16,5 +16,14 @@ class FuelRefueling extends Model
      * @var array
      */
     protected $dates = ['deleted_at'];
+
+    /**
+     * Атрибуты, которые назначаются массово.
+     *
+     * @var array
+     */
+    protected $fillable = [
+        'car', 'date', 'mileage', 'liters', 'price', 'type', 'gas_station', 'full', 'lost'
+    ];
     
 }

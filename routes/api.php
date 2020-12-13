@@ -73,6 +73,7 @@ Route::group([
     Route::post('/getMainData', 'Fuel\Fuel@getMainData');
     Route::post('/getFuelsCar', 'Fuel\Fuel@getFuelsCar');
     
+    Route::post('/showAddFuel', 'Fuel\Fuel@showAddFuel');
     Route::post('/addFuel', 'Fuel\Fuel@addFuel');
 
 });

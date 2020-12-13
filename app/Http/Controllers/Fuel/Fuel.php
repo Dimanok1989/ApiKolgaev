@@ -152,30 +152,75 @@ class Fuel extends Controller
             $stantions[] = $last[0]->gas_station;
 
         // Самые частопосещаемые заправки
-        $favs = FuelRefueling::select(\DB::raw('COUNT(*) as count, gas_station'))->where('car', $car)->groupBy('gas_station')->orderBy('count', 'DESC')->get();
+        $favs = FuelRefueling::select(
+            \DB::raw('COUNT(*) as count, gas_station')
+        )
+        ->where('car', $car)
+        ->groupBy('gas_station')
+        ->orderBy('count', 'DESC')
+        ->limit(7)
+        ->get();
 
-        // Добавление 5 заправок в список
-        $count = 1;
         foreach ($favs as $row) {
 
-            if (!in_array($row->gas_station, $stantions)) {
+            if (!in_array($row->gas_station, $stantions))
                 $stantions[] = $row->gas_station;
-                $count++;
-            }
-
-            if ($count == 7)
-                break;
 
         }
 
         return [
             'stantions' => $stantions,
             'type' => $last[0]->type ?? "",
+            'mileage' => $last[0]->mileage ?? null,
         ];
 
     }
 
+    /**
+     * Метод вывода данных для окна добавления новой заправки
+     * 
+     * @param Illuminate\Http\Request $request
+     * @return response
+     */
+    public static function showAddFuel(Request $request) {
+
+        $data = self::getStatisticCar($request->car);
+        $data['date'] = date("Y-m-d");
+
+        return response($data);
+
+    }
+
+    /**
+     * Метод записи новой заправки
+     * 
+     * @param Illuminate\Http\Request $request
+     * @return response
+     */
     public static function addFuel(Request $request) {
+
+        if (!$car = FuelCar::find($request->car))
+            return response(['message' => "Данные машины не найдены"], 400);
+
+        if ($car->user != $request->user()->id)
+            return response(['message' => "Доступ к чужим машинам закрыт"], 403);
+
+        $errors = [];
+
+        if (!$request->date)
+            $errors[] = ['name' => "date", 'message' => "Не указана дата заправки"];
+
+        if (!$request->mileage)
+            $errors[] = ['name' => "mileage", 'message' => "Не указан киллометраж"];
+
+        if (!$request->liters)
+            $errors[] = ['name' => "liters", 'message' => "Укажите количество литров"];
+
+        if (!$request->price)
+            $errors[] = ['name' => "price", 'message' => "Укажите стоимость одного литра"];
+
+        if (count($errors))
+            return response(['message' => "Заполнены не все поля", 'errors' => $errors], 400);
 
         $refueling = new FuelRefueling;
 
@@ -185,7 +230,7 @@ class Fuel extends Controller
         $refueling->liters = $request->liters;
         $refueling->price = $request->price;
         $refueling->type = $request->type;
-        $refueling->gas_station = $request->stantion;
+        $refueling->gas_station = $request->gas_station;
         $refueling->full = (int) $request->full;
         $refueling->lost = (int) $request->lost;
 
