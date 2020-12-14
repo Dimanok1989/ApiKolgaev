@@ -110,29 +110,25 @@ class Fuel extends Controller
         }
 
         // Заправки машины
-        $fuels = FuelRefueling::where('car', $request->id);
-
-        // Смещение строк для подгрузки данных
-        if ($request->offset)
-            $fuels = $fuels->offset($request->offset);
-
-        // Получение результата
-        $fuels = $fuels->orderBy('mileage', 'DESC')->limit($limit)->get();
+        $rows = FuelRefueling::where('car', $request->id)
+        ->orderBy('mileage', 'DESC')
+        ->paginate($limit);
 
         // Обработка данных
-        foreach ($fuels as &$fuel) {
-            $fuel->date = date("d.m.Y", strtotime($fuel->date));
-        }
+        $fuels = [];
 
-        $stat = self::getStatisticCar($request->id);
+        foreach ($rows as $fuel) {
+            $fuel->date = date("d.m.Y", strtotime($fuel->date));
+            $fuels[] = $fuel;
+        }
         
         return response([
             'car' => $car,
             'user' => $car->user == $request->user()->id,
             'fuels' => $fuels,
-            'limit' => $limit,
             'date' => date("Y-m-d"),
-            'statistic' => $stat,
+            'next' => $rows->currentPage() + 1,
+            'last' => $rows->lastPage(),
         ]);
 
     }
