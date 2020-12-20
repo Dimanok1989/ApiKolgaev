@@ -2,7 +2,7 @@
     "name": "kolgaev/api",
     "type": "project",
     "description": "API kolgaev.ru",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "keywords": [
         "framework",
         "laravel",
