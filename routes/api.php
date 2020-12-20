@@ -29,6 +29,8 @@ Route::group(['prefix' => 'auth'], function () {
     Route::post('/logout', 'Auth\AuthController@logout')->middleware('auth:api');
     /** Данные пользователя */
     Route::post('/user', 'Auth\AuthController@user')->middleware('auth:api');
+    /** Пункты меню пользователя */
+    Route::post('/getMenu', 'Auth\AuthController@getMenu')->middleware('auth:api');
     /** Список пунктов меню пользователя */
     Route::post('/getUserMenu', 'Auth\AuthController@getUserMenu')->middleware('auth:api');
     /** Изменение данных пользователя из личного кабинета */

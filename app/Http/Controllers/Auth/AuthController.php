@@ -199,4 +199,20 @@ class AuthController extends Controller
 
     }
 
+    /**
+     * Метод вывода пунктов меню пользователя
+     * 
+     * @param Illuminate\Http\Request $request
+     * @return response
+     */
+    public static function getMenu(request $request) {
+
+        $menu = MenuPoints::getMenuPoints($request);
+
+        return response([
+            'menu' => $menu,
+        ]);
+
+    }
+
 }
