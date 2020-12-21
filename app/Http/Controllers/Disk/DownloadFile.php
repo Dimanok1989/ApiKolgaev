@@ -163,6 +163,23 @@ class DownloadFile extends Controller
 
     }
 
+    /**
+     * Метод вывода файла
+     * 
+     * @param Illuminate\Http\Request $request
+     * @return response
+     */
+    public static function getFileFromLink(Request $request) {
+
+        return response([
+            $request->token,
+            $request->file,
+        ]);
+
+        return abort(404);
+
+    }
+
     public static function createArchiveOld($file) {
 
         $path = "drive/temp"; // Путь до временного каталога

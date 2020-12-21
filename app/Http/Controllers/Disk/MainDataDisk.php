@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Storage;
 
 use App\User;
 use App\DiskFile;
+use App\Models\Disk\DiskFilesLog;
 
 class MainDataDisk extends Controller
 {
@@ -280,6 +281,12 @@ class MainDataDisk extends Controller
             'socketId' => $request->header('X-Socket-Id'),
         ]);
 
+        DiskFilesLog::create([
+            'user_id' => $request->user()->id,
+            'file_id' => $file->id,
+            'type' => "mkdir",
+        ]);
+
         return response([
             'file' => $file,
         ]);
@@ -381,13 +388,10 @@ class MainDataDisk extends Controller
      * @param Illuminate\Http\Request $request
      * @return response
      */
-    public static function showImage(Request $request) {
+    public static function showImageOld(Request $request) {
 
-        $file = DiskFile::select(
-            'disk_files.*',
-            'disk_files_thumbnails.paht as thumb_paht',
-            'disk_files_thumbnails.litle as thumb_litle',
-            'disk_files_thumbnails.middle as thumb_middle'
+        $file = DiskFile::selectRaw(
+            "REPLACE(REPLACE(name, ' ', ''), '_', '') as sort, disk_files.*, disk_files_thumbnails.paht as thumb_paht, disk_files_thumbnails.litle as thumb_litle, disk_files_thumbnails.middle as thumb_middle"
         )
         ->where([
             ['deleted_at', NULL],
@@ -395,16 +399,16 @@ class MainDataDisk extends Controller
             ['is_dir', 0],
             ['in_dir', (int) $request->folder]
         ])
-        ->join('disk_files_thumbnails', 'disk_files_thumbnails.file_id', '=', 'disk_files.id')
-        ->orderBy('name')
-        ->limit(1);
+        ->join('disk_files_thumbnails', 'disk_files_thumbnails.file_id', '=', 'disk_files.id');
 
         if ($request->step == "next")
-            $file = $file->where('disk_files.id', '>', $request->id)->get();
+            $file = $file->where('disk_files.id', '>', $request->id)->orderBy('sort');
         elseif ($request->step == "back")
-            $file = $file->where('disk_files.id', '<', $request->id)->get();
+            $file = $file->where('disk_files.id', '<', $request->id)->orderBy('sort', 'DESC');
         else        
-            $file = $file->where('disk_files.id', $request->id)->get();
+            $file = $file->where('disk_files.id', $request->id)->orderBy('sort');
+
+        $file = $file->limit(1)->get();
 
         if (!count($file) AND $request->step)
             $file = self::showImageEndSteps($request);
@@ -416,6 +420,7 @@ class MainDataDisk extends Controller
             'link' => Storage::disk('public')->url($file[0]->thumb_paht . "/" . $file[0]->thumb_middle),
             'name' => $file[0]->name,
             'id' => $file[0]->id,
+            'sort' => $file[0]->sort,
         ]);
 
     }
@@ -448,7 +453,126 @@ class MainDataDisk extends Controller
         elseif ($request->step == "back")
             $file = $file->orderBy('name', 'DESC');
 
-        return $file->get();
+        $file = $file->get();
+
+        if ($request->newRows)
+            return $file[0] ?? false;
+
+        return $file;
+
+    }
+
+    /**
+     * Метод возвращает ссылку на изображение среднего качества для его просмотра на сайте
+     * 
+     * @param Illuminate\Http\Request $request
+     * @return response
+     */
+    public static function showImage(Request $request) {
+
+        if ($request->step)
+            return self::getStepImage($request);
+
+        $file = DiskFile::select(
+            'disk_files.*',
+            'disk_files_thumbnails.paht as thumb_paht',
+            'disk_files_thumbnails.litle as thumb_litle',
+            'disk_files_thumbnails.middle as thumb_middle'
+        )
+        ->where([
+            ['deleted_at', NULL],
+            ['delete_query', NULL],
+            ['is_dir', 0],
+            // ['in_dir', (int) $request->folder],
+            ['disk_files.id', $request->id],
+        ])
+        ->join('disk_files_thumbnails', 'disk_files_thumbnails.file_id', '=', 'disk_files.id')
+        ->limit(1)
+        ->get();
+
+        if (!count($file))
+            return response(['message' => "Фотокарточка не найдена или её миниатюра еще не создана"], 400);
+
+        return response([
+            'link' => Storage::disk('public')->url($file[0]->thumb_paht . "/" . $file[0]->thumb_middle),
+            'name' => $file[0]->name,
+            'id' => $file[0]->id,
+        ]);
+
+    }
+
+    /**
+     * Поиск следующего и предыдущего изобравжений
+     * 
+     * @param $request
+     * @return response
+     */
+    public static function getStepImage($request) {
+
+        $file = false;
+        $first = false;
+
+        DiskFile::select(
+            'disk_files.*',
+            'disk_files_thumbnails.paht as thumb_paht',
+            'disk_files_thumbnails.litle as thumb_litle',
+            'disk_files_thumbnails.middle as thumb_middle'
+        )
+        ->where([
+            ['deleted_at', NULL],
+            ['delete_query', NULL],
+            ['is_dir', 0],
+            ['in_dir', (int) $request->folder],
+        ])
+        ->join('disk_files_thumbnails', 'disk_files_thumbnails.file_id', '=', 'disk_files.id')
+        ->orderBy('disk_files.name')
+        ->chunk(100, function ($rows) use ($request, &$file, &$first) {
+
+            $next = false;
+            $back = false;
+
+            foreach ($rows as $row) {
+
+                if (!$first)
+                    $first = $row;
+
+                if ($next) {
+                    $file = $row;
+                    return true;
+                }
+
+                if ($request->step == "next" AND $row->id == $request->id)
+                    $next = true;
+
+                if ($request->step == "back" AND $row->id == $request->id) {
+                    $file = $back;
+                    return true;
+                }
+
+                $back = $row;
+
+            }
+
+        });
+
+        if (!$file) {
+
+            if ($request->step == "next" AND $first)
+                $file = $first;
+            elseif ($request->step == "back") {
+                $request->newRows = true;
+                $file = self::showImageEndSteps($request);
+            }
+            else
+                return response(['message' => "Фотокарточка не найдена"], 400);
+
+        }
+
+        return response([
+            'link' => Storage::disk('public')->url($file->thumb_paht . "/" . $file->thumb_middle),
+            'name' => $file->name,
+            'id' => $file->id,
+        ]);
 
     }
 
