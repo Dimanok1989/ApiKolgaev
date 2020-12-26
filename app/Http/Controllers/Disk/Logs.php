@@ -27,6 +27,7 @@ class Logs extends Controller
         )
         ->join('users', 'users.id', '=', 'disk_files_logs.user_id')
         ->join('disk_files', 'disk_files.id', '=', 'disk_files_logs.file_id')
+        ->whereNotIn('type', ['download'])
         ->orderBy('id', 'DESC')->limit(30)->get();
 
         $ids = [];
