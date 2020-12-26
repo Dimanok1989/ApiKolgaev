@@ -67,6 +67,8 @@ class Logs extends Controller
                 'file' => $row->file,
                 'comment' => $row->comment,
                 'count' => $row->count,
+                'user_id' => $row->user_id,
+                'file_id' => $row->file_id,
             ];
 
         }
