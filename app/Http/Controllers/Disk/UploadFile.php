@@ -25,7 +25,6 @@ use App\Http\Controllers\Disk\MainDataDisk;
 use App\DiskFile;
 use App\Models\Disk\DiskFilesLog;
 
-
 class UploadFile extends Controller
 {
 
@@ -39,6 +38,8 @@ class UploadFile extends Controller
 
         if (!$request->user)
             return response(['message' => "Нет идентификатора пользователя"], 400);
+
+        $request->operation_id = $request->operation_id ?? md5(time());
 
         $dir = $request->path ? $request->path : "drive/" . date("Y/m/d"); // Путь до файла
         
@@ -54,6 +55,7 @@ class UploadFile extends Controller
         $file->mime_type = $request->type;
         $file->in_dir = (int) $request->cd; // Принадлежность к каталогу
         $file->real_name = md5($file->name) . "." . $file->ext; // Имя файла для хранения
+        $file->operation_id = $request->operation_id; // Идентификатор операции
 
         if ($request->hash)
             $file->real_name = $request->hash;
@@ -87,10 +89,27 @@ class UploadFile extends Controller
                 'user' => (int) $file->user,
                 'socketId' => $request->header('X-Socket-Id'),
             ]);
+
+            if (!$request->operation_id) {
+                DiskFilesLog::create([
+                    'user_id' => $request->user()->id,
+                    'file_id' => $file->id,
+                    'type' => "upload",
+                ]);
+            }
+            else if (!DiskFilesLog::where('operation_id', $request->operation_id)->count()) {
+                DiskFilesLog::create([
+                    'user_id' => $request->user()->id,
+                    'file_id' => $file->in_dir,
+                    'type' => "uploads",
+                    'operation_id' => $request->operation_id,
+                ]);
+            }
             
         }
 
         return response([
+            'operation_id' => $request->operation_id,
             'hash' => $file->real_name,
             'path' => $file->path,
             'size' => Storage::disk('public')->size($dir . "/" . $file->real_name),

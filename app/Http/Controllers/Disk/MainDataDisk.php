@@ -529,7 +529,7 @@ class MainDataDisk extends Controller
         ])
         ->join('disk_files_thumbnails', 'disk_files_thumbnails.file_id', '=', 'disk_files.id')
         ->orderBy('disk_files.name')
-        ->chunk(5, function ($rows) use (&$request) {
+        ->chunk(50, function ($rows) use (&$request) {
 
             foreach ($rows as $row) {
 

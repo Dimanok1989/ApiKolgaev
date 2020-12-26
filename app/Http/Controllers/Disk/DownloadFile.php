@@ -10,6 +10,7 @@ use App\Http\Controllers\Disk\MainDataDisk;
 use App\Http\Controllers\Disk\FileReader;
 
 use App\DiskFile;
+use App\Models\Disk\DiskFilesLog;
 
 class DownloadFile extends Controller
 {
@@ -45,6 +46,12 @@ class DownloadFile extends Controller
             $size += $tree->size;
         }
 
+        DiskFilesLog::create([
+            'user_id' => $request->user()->id,
+            'file_id' => $file->id,
+            'type' => "download",
+        ]);
+
         return response([
             'name' => $name,
             'is_dir' => $file->is_dir,
@@ -67,11 +74,14 @@ class DownloadFile extends Controller
         if (!$file = DiskFile::find($request->id))
             return response(['message' => "Файл не найден"], 404);
 
+        $file->downloads += 1;
+        $file->save();
+
         if ($file->is_dir)
             return self::createArchive($file);
 
         $name = $file->name . "." . $file->ext;
-        $path = storage_path("app/" . $file->path . "/" . $file->real_name);
+        $path = storage_path("app/public/" . $file->path . "/" . $file->real_name);
 
         return response()->download($path, $name);
 
@@ -97,7 +107,7 @@ class DownloadFile extends Controller
             if ($file->ext)
                 $name .= "." . $file->ext;
 
-            $path = $file->is_dir ? null : storage_path("app/" . $file->path . "/" . $file->real_name);
+            $path = $file->is_dir ? null : storage_path("app/public/" . $file->path . "/" . $file->real_name);
 
             self::$tree[] = (object) [
                 'id' => $file->id,
@@ -180,6 +190,13 @@ class DownloadFile extends Controller
 
     }
 
+    /**
+     * Метод создания архива с файлами
+     * Устарел и не используется
+     * 
+     * @param object $file Объект данных каталога
+     * @return response
+     */
     public static function createArchiveOld($file) {
 
         $path = "drive/temp"; // Путь до временного каталога
@@ -223,7 +240,7 @@ class DownloadFile extends Controller
     public static function addFileToZip(Request $request) {
 
         $file = DiskFile::find($request->id);
-        $path = storage_path("app/" . $file->path); // Полный путь до каталога с файлом
+        $path = storage_path("app/public/" . $file->path); // Полный путь до каталога с файлом
 
         // Откртиые файла
         $stream = new FileReader($path . "/" . $file->real_name);
@@ -239,7 +256,7 @@ class DownloadFile extends Controller
         else
             $endread = true;
 
-        $temp = storage_path("app/drive/temp"); // Полный путь до временного каталога
+        $temp = storage_path("app/public/drive/temp"); // Полный путь до временного каталога
         $name = $temp . "/" . $request->zipname;
 
         $options = new \ZipStream\Option\Archive();

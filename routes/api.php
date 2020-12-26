@@ -52,6 +52,8 @@ Route::group([
     Route::post('/addFileToZip', 'Disk\DownloadFile@addFileToZip');
     Route::post('/deleteFile', 'Disk\MainDataDisk@deleteFile');
     Route::post('/showImage', 'Disk\MainDataDisk@showImage');
+    /** Вывод лога на галвную страницу */
+    Route::post('/getLogs', 'Disk\Logs@getLogs');
 });
 
 // Route::get('/ttttttt', function() {
