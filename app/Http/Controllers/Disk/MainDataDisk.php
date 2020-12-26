@@ -455,7 +455,7 @@ class MainDataDisk extends Controller
 
         $file = $file->get();
 
-        if ($request->newRows)
+        if ($request->findLast)
             return $file[0] ?? false;
 
         return $file;
@@ -483,7 +483,6 @@ class MainDataDisk extends Controller
             ['deleted_at', NULL],
             ['delete_query', NULL],
             ['is_dir', 0],
-            // ['in_dir', (int) $request->folder],
             ['disk_files.id', $request->id],
         ])
         ->join('disk_files_thumbnails', 'disk_files_thumbnails.file_id', '=', 'disk_files.id')
@@ -502,15 +501,19 @@ class MainDataDisk extends Controller
     }
 
     /**
-     * Поиск следующего и предыдущего изобравжений
+     * Поиск следующего и предыдущего изображений
      * 
-     * @param $request
+     * @param Illuminate\Http\Request $request
      * @return response
      */
     public static function getStepImage($request) {
 
-        $file = false;
-        $first = false;
+        $file = false; // Объект данных найдного изображения
+        $first = false; // Первое изображение в каталоге
+        $next = false; // Переход к следующему изображению
+        $back = false; // Переход к предыдущему изображению
+        $request->all = [];
+        $request->count = 0;
 
         DiskFile::select(
             'disk_files.*',
@@ -526,42 +529,43 @@ class MainDataDisk extends Controller
         ])
         ->join('disk_files_thumbnails', 'disk_files_thumbnails.file_id', '=', 'disk_files.id')
         ->orderBy('disk_files.name')
-        ->chunk(100, function ($rows) use ($request, &$file, &$first) {
-
-            $next = false;
-            $back = false;
+        ->chunk(5, function ($rows) use (&$request) {
 
             foreach ($rows as $row) {
 
-                if (!$first)
-                    $first = $row;
+                // Запись объекта первого изображения а каталоге
+                if (!$request->first)
+                    $request->first = $row;
 
-                if ($next) {
-                    $file = $row;
-                    return true;
+                // Вывод следюущего изображения
+                if ($request->next) {
+                    $request->file = $row;
+                    return false;
                 }
 
+                // Флаг вывода следующего изобравжения
                 if ($request->step == "next" AND $row->id == $request->id)
-                    $next = true;
+                    $request->next = $row->id;
 
+                // Вывод предыдущего изображения
                 if ($request->step == "back" AND $row->id == $request->id) {
-                    $file = $back;
-                    return true;
+                    $request->file = $request->back;
+                    return false;
                 }
 
-                $back = $row;
+                $request->back = $row;
 
             }
 
         });
 
-        if (!$file) {
+        if (!$request->file) {
 
-            if ($request->step == "next" AND $first)
-                $file = $first;
+            if ($request->step == "next" AND $request->first)
+                $request->file = $request->first;
             elseif ($request->step == "back") {
-                $request->newRows = true;
-                $file = self::showImageEndSteps($request);
+                $request->findLast = true;
+                $request->file = self::showImageEndSteps($request);
             }
             else
                 return response(['message' => "Фотокарточка не найдена"], 400);
@@ -569,9 +573,9 @@ class MainDataDisk extends Controller
         }
 
         return response([
-            'link' => Storage::disk('public')->url($file->thumb_paht . "/" . $file->thumb_middle),
-            'name' => $file->name,
-            'id' => $file->id,
+            'link' => Storage::disk('public')->url($request->file->thumb_paht . "/" . $request->file->thumb_middle),
+            'name' => $request->file->name,
+            'id' => $request->file->id,
         ]);
 
     }
