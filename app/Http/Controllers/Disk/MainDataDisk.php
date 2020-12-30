@@ -172,13 +172,13 @@ class MainDataDisk extends Controller
             }
             else {
 
+                $time = false;
+
                 $file->size = parent::formatSize($file->size);
                 $file->icon = self::getFileIcon($file);
 
-                if (Storage::disk('public')->exists($file->path . "/" . $file->real_name))
-                    $time = Storage::disk('public')->lastModified($file->path . "/" . $file->real_name);
-                else
-                    $time = false;
+                // if (Storage::disk('public')->exists($file->path . "/" . $file->real_name))
+                //     $time = Storage::disk('public')->lastModified($file->path . "/" . $file->real_name);
 
                 // Создание ссылок на миниатюры
                 if ($file->thumb_litle) {
