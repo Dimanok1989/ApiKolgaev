@@ -46,7 +46,7 @@ class RouteServiceProvider extends ServiceProvider
 
         $this->mapWebRoutes();
 
-        //
+        $this->mapRequestsApiRoutes(); 
     }
 
     /**
@@ -77,4 +77,18 @@ class RouteServiceProvider extends ServiceProvider
             ->namespace($this->namespace)
             ->group(base_path('routes/api.php'));
     }
+
+    /**
+     * Группа маршрутов для раздела Менеджер заявок
+     * 
+     * @return void
+     */
+    protected function mapRequestsApiRoutes()
+    {
+        Route::prefix('api/requests')
+            ->middleware(['api', 'auth:api', 'permission:requests'])
+            ->namespace($this->namespace)
+            ->group(base_path('routes/api/requests.php'));
+    }
+
 }
