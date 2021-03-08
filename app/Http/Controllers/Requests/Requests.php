@@ -14,9 +14,32 @@ class Requests extends Controller
      * @param Illuminate\Http\Request
      * @return response
      */
+    public static function checkUser(Request $request) {
+
+        return response()->json([
+            'user' => $request->user(),
+        ]);
+
+    }
+
+    /**
+     * Метод загрузки данных для формирования главной страницы
+     * 
+     * @param Illuminate\Http\Request
+     * @return response
+     */
     public static function load(Request $request) {
 
-        return response()->json();
+        // Доступ к разделу
+        $access = $request->user()->can('requests.access');
+
+        // Доступ администратора
+        $admin = $request->user()->can('requests.admin');
+
+        return response()->json([
+            'access' => $access,
+            'admin' => $admin,
+        ]);
 
     }
 }

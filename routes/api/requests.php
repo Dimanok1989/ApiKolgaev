@@ -9,4 +9,13 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 
-Route::post('/load', 'Requests\Requests@load');
+Route::group([
+    'middleware' => ['auth:api', 'permission:requests']
+], function() {
+
+    /** Первоначальная проверка пользователя */
+    Route::post('/checkUser', 'Requests\Requests@checkUser');
+    /** Загрузка данных */
+    Route::post('/load', 'Requests\Requests@load');
+
+});
