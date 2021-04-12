@@ -123,3 +123,6 @@ Route::group([
     });
 
 });
+
+/** Запись температуры */
+Route::any('writeTemperature', 'Devices\Temperature@writeTemperature');
