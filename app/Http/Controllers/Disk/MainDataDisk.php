@@ -442,22 +442,17 @@ class MainDataDisk extends Controller
      */
     public static function getStepImage($request) {
 
-        $file = false; // Объект данных найдного изображения
-        $first = false; // Первое изображение в каталоге
-        $next = false; // Переход к следующему изображению
-        $back = false; // Переход к предыдущему изображению
-        $request->all = [];
-        $request->count = 0;
-
-        DiskFile::where([
+        DiskFile::select(
+            'disk_files.*'
+        )
+        ->where([
             ['is_dir', 0],
             ['in_dir', (int) $request->folder],
-            ['deleted_at', NULL],
             ['delete_query', NULL],
         ])
         ->join('disk_files_thumbnails', 'disk_files_thumbnails.file_id', '=', 'disk_files.id')
-        ->orderBy('disk_files.name')
-        ->chunk(50, function ($rows) use (&$request) {
+        ->orderBy('name')
+        ->chunk(100, function ($rows) use (&$request) {
 
             foreach ($rows as $row) {
 
@@ -491,20 +486,20 @@ class MainDataDisk extends Controller
 
             if ($request->step == "next" AND $request->first)
                 $request->file = $request->first;
-            elseif ($request->step == "back") {
-                $request->findLast = true;
+            elseif ($request->step == "back") 
                 $request->file = self::showImageEndSteps($request);
-            }
             else
                 return response(['message' => "Фотокарточка не найдена"], 400);
 
         }
 
+        if (!$request->file)
+            return response(['message' => "Фотокарточка не найдена"], 400);
+
         return response([
             'link' => env('APP_URL') . "/disk/{$request->user()->remember_token}?file={$request->file->id}&thumb=middle",
             'name' => $request->file->name,
             'id' => $request->file->id,
-            $request->folder,
         ]);
 
     }
@@ -517,26 +512,19 @@ class MainDataDisk extends Controller
      */
     public static function showImageEndSteps($request) {
 
-        $file = DiskFile::where([
+        $file = DiskFile::select('disk_files.*')
+        ->where([
             ['is_dir', 0],
             ['in_dir', (int) $request->folder],
             ['deleted_at', NULL],
             ['delete_query', NULL],
         ])
         ->join('disk_files_thumbnails', 'disk_files_thumbnails.file_id', '=', 'disk_files.id')
-        ->limit(1);
+        ->limit(1)
+        ->orderBy('name', 'DESC')
+        ->get();
 
-        if ($request->step == "next")
-            $file = $file->orderBy('name');
-        elseif ($request->step == "back")
-            $file = $file->orderBy('name', 'DESC');
-
-        $file = $file->get();
-
-        if ($request->findLast)
-            return $file[0] ?? false;
-
-        return $file;
+        return $file[0] ?? false;
 
     }
 
