@@ -35,6 +35,8 @@ class CreateDiskFilesLog extends Migration
     public function down()
     {
         Schema::dropIfExists('disk_files_logs');
-        Schema::dropIfExists('disk_files');
+        Schema::table('disk_files', function (Blueprint $table) {
+            $table->dropColumn('operation_id');
+        });
     }
 }

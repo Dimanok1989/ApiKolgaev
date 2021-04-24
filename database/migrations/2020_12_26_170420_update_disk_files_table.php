@@ -25,6 +25,8 @@ class UpdateDiskFilesTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('disk_files');
+        Schema::table('disk_files', function (Blueprint $table) {
+            $table->dropColumn('downloads');
+        });
     }
 }

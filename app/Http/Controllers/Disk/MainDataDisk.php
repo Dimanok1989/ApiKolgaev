@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Storage;
 
 use App\User;
 use App\DiskFile;
+use App\Models\Disk\DiskFilesThumbnail;
 use App\Models\Disk\DiskFilesLog;
 
 class MainDataDisk extends Controller
@@ -136,30 +137,34 @@ class MainDataDisk extends Controller
             return response(['message' => "Ошибка идентификатора пользователя"], 400);
 
         $in_dir = (int) $request->folder;
+        $link = env('APP_URL') . "/disk/{$request->user()->remember_token}";
 
         $dirs = []; // Список каталогов
         $files = []; // Список файлов
 
-        $data = DiskFile::select(
-            'disk_files.*',
-            'disk_files_thumbnails.paht as thumb_paht',
-            'disk_files_thumbnails.id as thumb_id',
-            'disk_files_thumbnails.litle as thumb_litle',
-            'disk_files_thumbnails.middle as thumb_middle'
-        )
-        ->where([
-            ['in_dir', $in_dir],
+        $data = DiskFile::where([
             ['user', $request->id],
+            ['in_dir', $in_dir],
             ['deleted_at', NULL],
             ['delete_query', NULL],
         ])
-        ->leftjoin('disk_files_thumbnails', 'disk_files_thumbnails.file_id', '=', 'disk_files.id')
         ->orderBy('is_dir', 'DESC')
         ->orderBy('name')
         ->paginate(72);
 
-        $link = env('APP_URL') . "/disk/{$request->user()->remember_token}";
+        $files_id = [];
+        $thumbs = [];
 
+        foreach ($data as $row)
+            $files_id[] = $row->id;
+
+        DiskFilesThumbnail::whereIn('file_id', $files_id)
+        ->chunk(100, function($rows) use (&$thumbs) {
+            foreach ($rows as $row) {
+                $thumbs[$row->file_id] = $row;
+            }
+        });
+        
         foreach ($data as $file) {
 
             if ($file->is_dir) {
@@ -184,11 +189,15 @@ class MainDataDisk extends Controller
                 //     $time = Storage::disk('public')->lastModified($file->path . "/" . $file->real_name);
 
                 // Создание ссылок на миниатюры
-                if ($file->thumb_litle) {
-                    $file->thumb_litle = Storage::disk('public')->url($file->thumb_paht . "/" . $file->thumb_litle);
+                $thumb = $thumbs[$file->id] ?? null;
+
+                if ($thumb) {
                     // $file->thumb_middle = Storage::disk('public')->url($file->thumb_paht . "/" . $file->thumb_middle);
                     // $file->thumb_litle = $link . "?file={$file->id}&thumb=litle";
+
+                    $file->thumb_litle = Storage::disk('public')->url($thumb->paht . "/" . $thumb->litle);
                     $file->thumb_middle = $link . "?file={$file->id}&thumb=middle";
+
                 }
 
                 // $file->time = $time ? date("d.m.Y H:i:s", $time) : false;
@@ -222,6 +231,7 @@ class MainDataDisk extends Controller
             'paths' => array_reverse($paths),
             'next' => $data->currentPage() + 1,
             'last' => $data->lastPage(),
+            $thumbs
         ]);
 
     }
