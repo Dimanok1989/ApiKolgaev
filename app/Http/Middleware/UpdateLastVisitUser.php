@@ -18,9 +18,13 @@ class UpdateLastVisitUser
     {
 
         if ($request->user()) {
-            $user = \App\User::find($request->user()->id);
-            $user->last_visit = date("Y-m-d H:i:s");
-            $user->save();
+
+            $date = date("Y-m-d H:i:s");
+
+            // Обновление времени последнего действия пользователя
+            $request->user()->last_visit = $date;
+            $request->user()->save();
+
         }
 
         return $next($request);

@@ -19,7 +19,7 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/thumbnails/{token}/{file}', 'Disk\DownloadFile@getFileFromLink');
+Route::get('/disk/{token}', 'Disk\DownloadFile@getFileFromLink');
 
 // Route::get('/react', function () {
 

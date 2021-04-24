@@ -143,6 +143,7 @@ class MainDataDisk extends Controller
         $data = DiskFile::select(
             'disk_files.*',
             'disk_files_thumbnails.paht as thumb_paht',
+            'disk_files_thumbnails.id as thumb_id',
             'disk_files_thumbnails.litle as thumb_litle',
             'disk_files_thumbnails.middle as thumb_middle'
         )
@@ -156,6 +157,8 @@ class MainDataDisk extends Controller
         ->orderBy('is_dir', 'DESC')
         ->orderBy('name')
         ->paginate(72);
+
+        $link = env('APP_URL') . "/disk/{$request->user()->remember_token}";
 
         foreach ($data as $file) {
 
@@ -183,10 +186,13 @@ class MainDataDisk extends Controller
                 // Создание ссылок на миниатюры
                 if ($file->thumb_litle) {
                     $file->thumb_litle = Storage::disk('public')->url($file->thumb_paht . "/" . $file->thumb_litle);
-                    $file->thumb_middle = Storage::disk('public')->url($file->thumb_paht . "/" . $file->thumb_middle);
+                    // $file->thumb_middle = Storage::disk('public')->url($file->thumb_paht . "/" . $file->thumb_middle);
+                    // $file->thumb_litle = $link . "?file={$file->id}&thumb=litle";
+                    $file->thumb_middle = $link . "?file={$file->id}&thumb=middle";
                 }
 
-                $file->time = $time ? date("d.m.Y H:i:s", $time) : false;
+                // $file->time = $time ? date("d.m.Y H:i:s", $time) : false;
+                $file->time = date("d.m.Y H:i:s", strtotime($file->created_at));
 
                 $files[] = $file;
 
@@ -493,7 +499,8 @@ class MainDataDisk extends Controller
             return response(['message' => "Фотокарточка не найдена или её миниатюра еще не создана"], 400);
 
         return response([
-            'link' => Storage::disk('public')->url($file[0]->thumb_paht . "/" . $file[0]->thumb_middle),
+            'link' => env('APP_URL') . "/disk/{$request->user()->remember_token}?file={$file[0]->id}&thumb=middle",
+            // 'link' => Storage::disk('public')->url($file[0]->thumb_paht . "/" . $file[0]->thumb_middle),
             'name' => $file[0]->name,
             'id' => $file[0]->id,
         ]);

@@ -10,6 +10,7 @@ use App\Http\Controllers\Disk\MainDataDisk;
 use App\Http\Controllers\Disk\FileReader;
 
 use App\DiskFile;
+use App\Models\Disk\DiskFilesThumbnail;
 use App\Models\Disk\DiskFilesLog;
 
 class DownloadFile extends Controller
@@ -181,12 +182,88 @@ class DownloadFile extends Controller
      */
     public static function getFileFromLink(Request $request) {
 
-        return response([
-            $request->token,
-            $request->file,
-        ]);
+        $token = \App\User::where([
+            ['remember_token', $request->token],
+            ['email_verified_at', '>', date("Y-m-d H:i:s", time() - 60 * 60 * 3)]
+        ])
+        ->limit(1)
+        ->get();
 
-        return abort(404);
+        $request->user = $token[0] ?? null;
+
+        if (!$request->user)
+            return abort(403);
+            
+        if ($request->thumb)
+            return self::getThumb($request);
+
+        return self::getFile($request);
+
+    }
+
+    /**
+     * Метод вывода миниатюры фотографии
+     * 
+     * @param Illuminate\Http\Request $request
+     * @return response
+     */
+    public static function getThumb($request) {
+
+        if (!in_array($request->thumb, ['litle', 'middle']))
+            return abort(404);
+
+        $row = DiskFilesThumbnail::select(
+            'disk_files.user',
+            'disk_files.hiden',
+            'disk_files_thumbnails.file_id',
+            'disk_files_thumbnails.paht as path',
+            'disk_files_thumbnails.litle',
+            'disk_files_thumbnails.middle'
+        )
+        ->join('disk_files', 'disk_files.id', '=', 'disk_files_thumbnails.file_id')
+        ->where('file_id', $request->file)
+        ->get();
+
+        $file = $row[0] ?? null;
+
+        if (!$file)
+            return abort(404);
+
+        if ($file->hiden == 1 AND $file->user != $request->user->id)
+            return abort(403);
+
+        $path = storage_path("app/" . $file->path . "/" . $file->{$request->thumb});
+
+        if (!file_exists($path))
+            return abort(404);
+
+        return response()->file($path);
+
+    }
+
+    /**
+     * Метод вывода файла по запросу
+     * 
+     * @param Illuminate\Http\Request $request
+     * @return response
+     */
+    public static function getFile(Request $request) {
+
+        if (!$file = DiskFile::find($request->file))
+            return abort(404);
+
+        if ($file->hiden == 1 AND $file->user != $request->user->id)
+            return abort(403);
+
+        $path = storage_path("app/" . $file->path . "/" . $file->real_name);
+
+        if (!file_exists($path))
+            return abort(404);
+
+        // $headers['Content-disposition'] = 'attachment; filename="' . $file->real_name . '"';
+        // $headers['Content-Type'] = $file->mime_type;
+
+        return response()->file($path);
 
     }
 
