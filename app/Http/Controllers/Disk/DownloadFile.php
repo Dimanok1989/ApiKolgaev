@@ -82,7 +82,7 @@ class DownloadFile extends Controller
             return self::createArchive($file);
 
         $name = $file->name . "." . $file->ext;
-        $path = storage_path("app/public/" . $file->path . "/" . $file->real_name);
+        $path = storage_path("app/" . $file->path . "/" . $file->real_name);
 
         return response()->download($path, $name);
 
@@ -96,10 +96,13 @@ class DownloadFile extends Controller
      */
     public static function getFilesInDir($id, $tree = "") {
 
-        $files = DiskFile::where([
-            ['deleted_at', null],
-            ['in_dir', $id],
-        ])->get();
+        $files = [];
+        
+        DiskFile::where('in_dir', $id)->chunk(100, function($rows) use (&$files) {
+            foreach ($rows as $row) {
+                $files[] = $row;
+            }
+        });
 
         foreach ($files as $file) {
 
@@ -108,7 +111,7 @@ class DownloadFile extends Controller
             if ($file->ext)
                 $name .= "." . $file->ext;
 
-            $path = $file->is_dir ? null : storage_path("app/public/" . $file->path . "/" . $file->real_name);
+            $path = $file->is_dir ? null : storage_path("app/" . $file->path . "/" . $file->real_name);
 
             self::$tree[] = (object) [
                 'id' => $file->id,
@@ -138,7 +141,7 @@ class DownloadFile extends Controller
      */
     public static function createArchive($file) {
 
-        set_time_limit(200); // Увеличение времени работы скрипта
+        set_time_limit(0); // Увеличение времени работы скрипта
 
         self::getFilesInDir($file->id); // Список файлов в каталоге
         $tree = self::$tree; // Дерево файлов в каталоге

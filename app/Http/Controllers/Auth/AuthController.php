@@ -141,13 +141,6 @@ class AuthController extends Controller
         if ($request->menu == true)
             $menu = MenuPoints::getMenuPoints($request);
 
-        // Проверка и обновление токена для прямых ссылок
-        if ($request->user()->email_verified_at < date("Y-m-d H:i:s", time() - 60 * 60 * 3)) {
-            $request->user()->email_verified_at = date("Y-m-d H:i:s");
-            $request->user()->remember_token = md5($request->user()->email . $request->user()->id . time());
-            $request->user()->save();
-        }
-
         return response([
             'message' => "Доступ разрешен",
             'user' => $request->user(),

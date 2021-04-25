@@ -23,6 +23,13 @@ class UpdateLastVisitUser
 
             // Обновление времени последнего действия пользователя
             $request->user()->last_visit = $date;
+
+            // Проверка и обновление токена для прямых ссылок
+            if ($request->user()->email_verified_at < date("Y-m-d 23:59:59")) {
+                $request->user()->email_verified_at = date("Y-m-d 23:59:59");
+                $request->user()->remember_token = md5($request->user()->email . $request->user()->id . time());
+            }
+
             $request->user()->save();
 
         }
