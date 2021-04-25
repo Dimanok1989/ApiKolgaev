@@ -221,7 +221,7 @@ class DownloadFile extends Controller
             'disk_files_thumbnails.litle',
             'disk_files_thumbnails.litle_path',
             'disk_files_thumbnails.middle',
-            'disk_files_thumbnails.middle_path',
+            'disk_files_thumbnails.middle_path'
         )
         ->join('disk_files', 'disk_files.id', '=', 'disk_files_thumbnails.file_id')
         ->where('file_id', $request->file)
