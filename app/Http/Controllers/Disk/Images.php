@@ -10,6 +10,17 @@ use Image;
 use App\DiskFile;
 use App\Models\Disk\DiskFilesThumbnail;
 
+/**
+ * Необходимо создать символьную сылку на каталог с миниатюрами
+ * 
+ * Для Windows
+ * mklink /D "[...]\storage\app\public\thumbs" "[...]\storage\app\drive\thumbs\litle"
+ * 
+ * Для Linux
+ * ln -s [...]\storage\app\drive\thumbs\litle [...]\storage\app\public\thumbs
+ * 
+ * [...] - Каталог с проектом
+ */
 class Images extends Controller
 {
 
@@ -132,33 +143,35 @@ class Images extends Controller
         $file->save();
 
         // Путь до каталога с фото к просмотру на сайте
-        $middle_dir = "drive/thumbs/" . date("Y/m/d/H");
+        $middle_dir_prefix = "drive/thumbs/middle";
+        $middle_dir = date("Y/m/d/H");
 
         // Проверка и создание каталога
-        if (!Storage::exists($middle_dir))
-            Storage::makeDirectory($middle_dir);
+        if (!Storage::exists("{$middle_dir_prefix}/{$middle_dir}"))
+            Storage::makeDirectory("{$middle_dir_prefix}/{$middle_dir}");
 
         // Проверка наличия файла с именем
         $middle_name = md5($file->real_name . $this->middle) . "." . $file->ext; // Имя файла
         $count = 1;
 
-        while (Storage::disk('public')->exists("{$middle_dir}/{$middle_name}")) {
+        while (Storage::disk('public')->exists("{$middle_dir_prefix}/{$middle_dir}/{$middle_name}")) {
             $middle_name = md5($middle_name . $this->middle . $count) . "." . $file->ext;
             $count++;
         }
 
         // Путь до миниатюр (будут общедоступными)
-        $litle_dir = "thumbs/" . date("Y/m/d/H");
+        $litle_dir_prefix = "drive/thumbs/litle";
+        $litle_dir = date("Y/m/d/H");
 
         // Проверка и создание каталога
-        if (!Storage::disk('public')->exists($litle_dir))
-            Storage::disk('public')->makeDirectory($litle_dir);
+        if (!Storage::exists("{$litle_dir_prefix}/{$middle_dir}"))
+            Storage::makeDirectory("{$litle_dir_prefix}/{$middle_dir}");
 
         // Проверка наличия миниатюры с именем
         $litle_name = md5($file->real_name . $this->litle) . "." . $file->ext; // Имя файла
         $count = 1;
 
-        while (Storage::exists("{$litle_dir}/{$litle_name}")) {
+        while (Storage::exists("{$litle_dir_prefix}/{$litle_dir}/{$litle_name}")) {
             $litle_name = md5($litle_name . $this->litle . $count) . "." . $file->ext;
             $count++;
         }
@@ -166,8 +179,8 @@ class Images extends Controller
         // Путь до файла-исходника
         $file_path = storage_path('app/' . $file->path . "/" . $file->real_name);
 
-        $middle_path = storage_path('app/' . $middle_dir); // Путь до урезанной копии
-        $litle_path = storage_path('app/public/' . $litle_dir); // Путь до миниатюры
+        $middle_path = storage_path("app/{$middle_dir_prefix}/{$middle_dir}"); // Путь до урезанной копии
+        $litle_path = storage_path("app/{$litle_dir_prefix}/{$litle_dir}"); // Путь до миниатюры
 
         // Создание изображения на основе исходника
         $img = Image::make($file_path);
@@ -206,7 +219,7 @@ class Images extends Controller
         });
 
         $middle->save("{$middle_path}/{$middle_name}", 60);
-        echo date("[Y-m-d H:i:s]") . " middle {$file_path} ===> {$middle_path}/{$middle_name}\n";
+        echo date("[Y-m-d H:i:s]") . " MIDDLE {$file_path} ===> {$middle_path}/{$middle_name}\n";
 
         // Создание эскиза
         $litle = $img->resize($litleWidth, $litleHeight, function ($constraint) {
@@ -215,23 +228,23 @@ class Images extends Controller
         });
 
         $litle->save("{$litle_path}/{$litle_name}", 60);
-        echo date("[Y-m-d H:i:s]") . " litle {$file_path} ===> {$litle_path}/{$litle_name}\n";
+        echo date("[Y-m-d H:i:s]") . " LITLE {$file_path} ===> {$litle_path}/{$litle_name}\n";
 
         // Сохранение информации об эскизах
         $thumbnails = new DiskFilesThumbnail;
         $thumbnails->file_id = $file->id;
-        $thumbnails->litle = $litle_name;
-        $thumbnails->litle_path = $litle_dir;
+        $thumbnails->litle = $litle_dir . "/" . $litle_name;
+        $thumbnails->litle_path = $litle_dir_prefix;
         $thumbnails->litle_size = filesize("{$litle_path}/{$litle_name}");
-        $thumbnails->middle = $middle_name;
-        $thumbnails->middle_path = $middle_dir;
+        $thumbnails->middle = $middle_dir . "/" . $middle_name;
+        $thumbnails->middle_path = $middle_dir_prefix;
         $thumbnails->middle_size = filesize("{$middle_path}/{$middle_name}");
         $thumbnails->save();
 
         \App\Events\Disk::dispatch([
             'thumbnails' => [
                 'id' => $file->id,
-                'litle' => Storage::disk('public')->url($litle_dir . "/" . $litle_name),
+                'litle' => Storage::disk('public')->url("thumbs/{$litle_dir}/{$litle_name}"),
                 'middle' => "?file={$file->id}&thumb=middle",
             ],
             'user' => (int) $file->user,

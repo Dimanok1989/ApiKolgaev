@@ -192,7 +192,7 @@ class MainDataDisk extends Controller
                 $thumb = $thumbs[$file->id] ?? null;
 
                 if ($thumb) {
-                    $file->thumb_litle = Storage::disk('public')->url($thumb->litle_path . "/" . $thumb->litle);
+                    $file->thumb_litle = Storage::disk('public')->url("thumbs/{$thumb->litle}");
                     $file->thumb_middle = $link . "?file={$file->id}&thumb=middle";
                 }
 
