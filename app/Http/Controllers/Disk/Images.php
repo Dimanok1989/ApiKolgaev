@@ -18,8 +18,10 @@ class Images extends Controller
      * 
      * @var array
      */
-    public $mime_types = [
-        'image/jpeg', 'image/png', 'image/gif'
+    protected $mime_types = [
+        'image/jpeg',
+        'image/png',
+        'image/gif'
     ];
 
     /**
@@ -27,65 +29,70 @@ class Images extends Controller
      * 
      * @var int
      */
-    public $litle = 200;
+    protected $litle = 200;
 
     /**
      * Ширина картинки для просмотра
      * 
      * @var int
      */
-    public $middle = 1600;
-
-    /**
-     * Определение вывода результата
-     * 
-     * @var bool
-     */
-    public $echo = false;
+    protected $middle = 1600;
 
     /**
      * Пауза между обработкой файлов
      * 
      * @var int
      */
-    public $sleep = 4;
+    protected $sleep = 4;
+
+    /**
+     * Выполнение одного прохода скрипта
+     * 
+     * @var bool
+     */
+    protected $onestep = false;
 
     /**
      * Определение параметров
+     * 
+     * @param array $options
      */
-    public function __construct($echo = false) {
+    public function __construct($options) {
 
-        $this->echo = $echo;
-        
-        $this->sleep = (int) env('SLEEP_CREATE_THUMBS', 4);
+        $this->start = microtime(1); // Время запуска скрипта
+        $this->last = $this->start; // Время последней операции
+
+        // Пауза между выполнением
+        $this->sleep = $options['sleep'] ?? $this->sleep;
+
+        // Отключение цикла
+        $this->onestep = $options['onestep'] ?? $this->onestep;
 
     }
 
     /**
-     * Запуск цикла в работу в течение 1 минуты для повторного выполнения кроной
+     * Запуск цикла в работу
      * 
      * @return array
      */
     public function resize() {
 
-        set_time_limit(70); // Увеличить время работы скрипта
+        $this->resizeFile(); // Поиск и обработка изображений
 
-        $start = $last = microtime(true); // Время старта
-        $count = 0; // Счетчик прохода цикла
+        if ($this->onestep)
+            return null;
 
-        while ($start > time() - 50) {
+        while ($this->start > time() - 55) {
 
-            if ($process = $this->resizeFile())
-                $data[] = $process;
+            if (microtime(1) - $this->last < $this->sleep)
+                continue;
 
-            $last = microtime(true);
-
-            $count++;
-
-            if ($this->sleep > 0)
-                sleep($this->sleep); // Пауза для уменьшения нагрузки
+            $this->resizeFile();
+            $this->last = microtime(true);
 
         }
+
+        return null;
 
         $time = round(microtime(true) - $start, 2);
 
@@ -109,26 +116,63 @@ class Images extends Controller
      */
     public function resizeFile() {
 
-        $file = DiskFile::where('thumbnail_created', NULL)
-        ->whereIn('mime_type', $this->mime_types)
+        $files = DiskFile::whereIn('mime_type', $this->mime_types)
+        ->where('thumbnail_created', NULL)
         ->limit(1)
         ->get();
 
-        if (!count($file))
+        $file = $files[0] ?? null;
+
+        if (!$file) {
+            echo date("[Y-m-d H:i:s]") . " Файлов не найдено\n";
             return null;
+        }
 
-        $file = $file[0];
+        $file->thumbnail_created = date("Y-m-d H:i:s");
+        $file->save();
 
-        $dir = $file->path . "/thumbnails";
+        // Путь до каталога с фото к просмотру на сайте
+        $middle_dir = "drive/thumbs/" . date("Y/m/d/H");
 
-        if (!Storage::disk('public')->exists($dir))
-            Storage::disk('public')->makeDirectory($dir);
+        // Проверка и создание каталога
+        if (!Storage::exists($middle_dir))
+            Storage::makeDirectory($middle_dir);
 
-        $path = storage_path('app/public/' . $dir);
-        $filepath = storage_path('app/public/' . $file->path . "/" . $file->real_name);
+        // Проверка наличия файла с именем
+        $middle_name = md5($file->real_name . $this->middle) . "." . $file->ext; // Имя файла
+        $count = 1;
 
-        $img = Image::make($filepath);
+        while (Storage::disk('public')->exists("{$middle_dir}/{$middle_name}")) {
+            $middle_name = md5($middle_name . $this->middle . $count) . "." . $file->ext;
+            $count++;
+        }
 
+        // Путь до миниатюр (будут общедоступными)
+        $litle_dir = "thumbs/" . date("Y/m/d/H");
+
+        // Проверка и создание каталога
+        if (!Storage::disk('public')->exists($litle_dir))
+            Storage::disk('public')->makeDirectory($litle_dir);
+
+        // Проверка наличия миниатюры с именем
+        $litle_name = md5($file->real_name . $this->litle) . "." . $file->ext; // Имя файла
+        $count = 1;
+
+        while (Storage::exists("{$litle_dir}/{$litle_name}")) {
+            $litle_name = md5($litle_name . $this->litle . $count) . "." . $file->ext;
+            $count++;
+        }
+
+        // Путь до файла-исходника
+        $file_path = storage_path('app/' . $file->path . "/" . $file->real_name);
+
+        $middle_path = storage_path('app/' . $middle_dir); // Путь до урезанной копии
+        $litle_path = storage_path('app/public/' . $litle_dir); // Путь до миниатюры
+
+        // Создание изображения на основе исходника
+        $img = Image::make($file_path);
+
+        // Чтение данных изображения
         $exif = $img->exif('COMPUTED');
 
         $w = $exif['Width'] ?? null;
@@ -155,27 +199,14 @@ class Images extends Controller
             $middleWidth = $this->middle;
         }
 
-        $filename = $file->real_name; // Имя файла
-        $count = 1;
-
-        while (Storage::disk('public')->exists("{$dir}/{$filename}")) {
-            $filename = md5($filename . $count) . "." . $file->ext;
-            $count++;
-        }
-
-        // Создание урезанной копии
+        // Создание урезанной копии для просмотра на сайте
         $middle = $img->resize($middleWidth, $middleHeight, function ($constraint) {
             $constraint->aspectRatio();
             $constraint->upsize();
         });
 
-        $middle->save("{$path}/{$filename}", 60);
-        $nameMiddle = $filename;
-
-        while (Storage::disk('public')->exists("{$dir}/{$filename}")) {
-            $filename = md5($filename . $count) . "." . $file->ext;
-            $count++;
-        }
+        $middle->save("{$middle_path}/{$middle_name}", 60);
+        echo date("[Y-m-d H:i:s]") . " middle {$file_path} ===> {$middle_path}/{$middle_name}\n";
 
         // Создание эскиза
         $litle = $img->resize($litleWidth, $litleHeight, function ($constraint) {
@@ -183,40 +214,30 @@ class Images extends Controller
             $constraint->upsize();
         });
 
-        $litle->save("{$path}/{$filename}", 60);
-        $nameLitle = $filename;
+        $litle->save("{$litle_path}/{$litle_name}", 60);
+        echo date("[Y-m-d H:i:s]") . " litle {$file_path} ===> {$litle_path}/{$litle_name}\n";
 
-        $filerow = DiskFile::find($file->id);
-        $filerow->thumbnail_created = date("Y-m-d H:i:s");
-        $filerow->save();
-
+        // Сохранение информации об эскизах
         $thumbnails = new DiskFilesThumbnail;
         $thumbnails->file_id = $file->id;
-        $thumbnails->paht = $dir;
-        $thumbnails->litle = $nameLitle;
-        $thumbnails->litle_size = filesize("{$path}/{$nameLitle}");
-        $thumbnails->middle = $nameMiddle;
-        $thumbnails->middle_size = filesize("{$path}/{$nameMiddle}");
+        $thumbnails->litle = $litle_name;
+        $thumbnails->litle_path = $litle_dir;
+        $thumbnails->litle_size = filesize("{$litle_path}/{$litle_name}");
+        $thumbnails->middle = $middle_name;
+        $thumbnails->middle_path = $middle_dir;
+        $thumbnails->middle_size = filesize("{$middle_path}/{$middle_name}");
         $thumbnails->save();
 
         \App\Events\Disk::dispatch([
             'thumbnails' => [
                 'id' => $file->id,
-                'litle' => Storage::disk('public')->url($dir . "/" . $nameLitle),
-                'middle' => Storage::disk('public')->url($dir . "/" . $nameMiddle),
+                'litle' => Storage::disk('public')->url($litle_dir . "/" . $litle_name),
+                'middle' => "?file={$file->id}&thumb=middle",
             ],
             'user' => (int) $file->user,
         ]);
 
-        if ($this->echo) {
-            echo "\033[32m" . "Создан эскиз фото {$file->path}/{$file->name}.{$file->ext}\n";
-            return true;
-        }
-
-        return [
-            'file' => $filerow,
-            'thumbnails' => $thumbnails,
-        ];
+        return null;
 
     }
 

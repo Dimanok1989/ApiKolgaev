@@ -11,7 +11,7 @@ class ThumbnailsImages extends Command
      *
      * @var string
      */
-    protected $signature = 'disk:thumbnails';
+    protected $signature = 'disk:thumbnails {--sleep=4 : Пауза между поиском картинки} {--onestep : Отключение цикла в скрипте}';
 
     /**
      * The console command description.
@@ -38,8 +38,12 @@ class ThumbnailsImages extends Command
     public function handle()
     {
      
-        $thumbnails = new \App\Http\Controllers\Disk\Images(true);
+        set_time_limit(70); // Увеличить время работы скрипта
+
+        $thumbnails = new \App\Http\Controllers\Disk\Images($this->options());
         $thumbnails->resize();
+
+        return 0;
 
     }
 }

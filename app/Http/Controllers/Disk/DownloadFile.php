@@ -215,10 +215,13 @@ class DownloadFile extends Controller
         $row = DiskFilesThumbnail::select(
             'disk_files.user',
             'disk_files.hiden',
-            'disk_files_thumbnails.file_id',
-            'disk_files_thumbnails.paht as path',
+            'disk_files.is_dir',
+            'disk_files.delete_query',
+            'disk_files.deleted_at',
             'disk_files_thumbnails.litle',
-            'disk_files_thumbnails.middle'
+            'disk_files_thumbnails.litle_path',
+            'disk_files_thumbnails.middle',
+            'disk_files_thumbnails.middle_path',
         )
         ->join('disk_files', 'disk_files.id', '=', 'disk_files_thumbnails.file_id')
         ->where('file_id', $request->file)
@@ -229,10 +232,18 @@ class DownloadFile extends Controller
         if (!$file)
             return abort(404);
 
+        if ($file->is_dir == 1 || $file->delete_query || $file->deleted_at)
+            return abort(404);
+
         if ($file->hiden == 1 AND $file->user != $request->user->id)
             return abort(403);
 
-        $path = storage_path("app/" . $file->path . "/" . $file->{$request->thumb});
+        if ($request->thumb == "litle")
+            $path = storage_path("app/public/{$file->litle_path}/{$file->litle}");
+        elseif ($request->thumb == "middle")
+            $path = storage_path("app/{$file->middle_path}/{$file->middle}");
+        else
+            return abort(403);
 
         if (!file_exists($path))
             return abort(404);
@@ -251,6 +262,9 @@ class DownloadFile extends Controller
 
         if (!$file = DiskFile::find($request->file))
             return abort(404);
+        
+        if ($file->is_dir == 1 || $file->delete_query || $file->deleted_at)
+            return abort(404);
 
         if ($file->hiden == 1 AND $file->user != $request->user->id)
             return abort(403);
@@ -259,9 +273,6 @@ class DownloadFile extends Controller
 
         if (!file_exists($path))
             return abort(404);
-
-        // $headers['Content-disposition'] = 'attachment; filename="' . $file->real_name . '"';
-        // $headers['Content-Type'] = $file->mime_type;
 
         return response()->file($path);
 

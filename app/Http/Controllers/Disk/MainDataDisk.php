@@ -185,23 +185,19 @@ class MainDataDisk extends Controller
                 $file->size = parent::formatSize($file->size);
                 $file->icon = self::getFileIcon($file);
 
-                // if (Storage::disk('public')->exists($file->path . "/" . $file->real_name))
-                //     $time = Storage::disk('public')->lastModified($file->path . "/" . $file->real_name);
+                if (Storage::disk('public')->exists($file->path . "/" . $file->real_name))
+                    $time = Storage::disk('public')->lastModified($file->path . "/" . $file->real_name);
 
                 // Создание ссылок на миниатюры
                 $thumb = $thumbs[$file->id] ?? null;
 
                 if ($thumb) {
-                    // $file->thumb_middle = Storage::disk('public')->url($file->thumb_paht . "/" . $file->thumb_middle);
-                    // $file->thumb_litle = $link . "?file={$file->id}&thumb=litle";
-
-                    $file->thumb_litle = Storage::disk('public')->url($thumb->paht . "/" . $thumb->litle);
+                    $file->thumb_litle = Storage::disk('public')->url($thumb->litle_path . "/" . $thumb->litle);
                     $file->thumb_middle = $link . "?file={$file->id}&thumb=middle";
-
                 }
 
-                // $file->time = $time ? date("d.m.Y H:i:s", $time) : false;
-                $file->time = date("d.m.Y H:i:s", strtotime($file->created_at));
+                $time = $time ?? strtotime($file->created_at);
+                $file->time = date("d.m.Y H:i:s", $time);
 
                 $files[] = $file;
 
