@@ -282,6 +282,53 @@ class DownloadFile extends Controller
     }
 
     /**
+     * Скачивание файла
+     * Ссылка для скачивания `{host}/download/{file_name}?file={file}&main_id={main_id}`
+     * 
+     * @param Illuminate\Http\Request $request
+     * @return response
+     */
+    public static function downloadFile(Request $request, $file_name) {
+
+        $token = $_COOKIE['main_id'] ?? null;
+
+        if ($token != $request->main_id)
+            return abort(403);
+
+        $token = \App\User::where([
+            ['remember_token', $request->main_id],
+            ['email_verified_at', '>', date("Y-m-d H:i:s", time() - 60 * 60 * 3)]
+        ])
+        ->limit(1)
+        ->get();
+
+        $request->user = $token[0] ?? null;
+
+        if (!$request->user)
+            return abort(403);
+
+        if (!$file = DiskFile::find($request->file))
+            return abort(404);
+
+        if ($file->is_dir == 1 || $file->delete_query || $file->deleted_at)
+            return abort(404);
+
+        if ($file->hiden == 1 AND $file->user != $request->user->id)
+            return abort(403);
+
+        $path = storage_path("app/" . $file->path . "/" . $file->real_name);
+
+        if (!file_exists($path))
+            return abort(404);
+
+        $file->downloads++;
+        $file->save();
+
+        return response()->download($path, "{$file->name}.{$file->ext}");
+
+    }
+
+    /**
      * Метод создания архива с файлами
      * Устарел и не используется
      * 

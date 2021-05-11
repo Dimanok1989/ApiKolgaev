@@ -20,6 +20,7 @@ Route::get('/', function () {
 });
 
 Route::get('/disk/{token}', 'Disk\DownloadFile@getFileFromLink');
+Route::get('/download/{file_name}', 'Disk\DownloadFile@downloadFile');
 
 // Route::get('/react', function () {
 
