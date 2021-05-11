@@ -359,8 +359,9 @@ class MainDataDisk extends Controller
             'socketId' => $request->header('X-Socket-Id'),
         ]);
         
-        return response([
-            'name' => $name
+        return response()->json([
+            'name' => $name,
+            'onlyName' => $request->name,
         ]);
 
     }
