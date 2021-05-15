@@ -227,7 +227,6 @@ class MainDataDisk extends Controller
             'paths' => array_reverse($paths),
             'next' => $data->currentPage() + 1,
             'last' => $data->lastPage(),
-            $thumbs
         ]);
 
     }
@@ -276,7 +275,7 @@ class MainDataDisk extends Controller
 
         $file = new DiskFile;
 
-        $file->name = "Новая папка";
+        $file->name = $request->name ?? "Новая папка";
         $file->user = $request->user()->id;
         $file->is_dir = 1;
         $file->in_dir = (int) $request->cd;
@@ -287,11 +286,10 @@ class MainDataDisk extends Controller
         $file->time = date("d.m.Y H:i:s");
         $file->icon = "folder";
 
-        \App\Events\Disk::dispatch((object) [
+        broadcast(new \App\Events\Disk((object) [
             'mkdir' => $file,
             'user' => (int) $file->user,
-            'socketId' => $request->header('X-Socket-Id'),
-        ]);
+        ]))->toOthers();
 
         DiskFilesLog::create([
             'user_id' => $request->user()->id,

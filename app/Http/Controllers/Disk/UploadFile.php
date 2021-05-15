@@ -21,6 +21,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\File;
 
 use App\Http\Controllers\Disk\MainDataDisk;
+use App\Jobs\Disk\CreateThumbPhoto;
 
 use App\DiskFile;
 use App\Models\Disk\DiskFilesLog;
@@ -63,10 +64,10 @@ class UploadFile extends Controller
             $file->real_name = self::createFile($dir, $file);
 
         // Дополнение файла очередной частью
-        if (Storage::disk('public')->exists("{$dir}/{$file->real_name}")) {
+        if (Storage::exists("{$dir}/{$file->real_name}")) {
 
             $chunk = base64_decode($request->chunk);
-            $path = storage_path('app/public/' . $dir . "/" . $file->real_name);
+            $path = storage_path('app/' . $dir . "/" . $file->real_name);
 
             $write = self::putChunk($path);
             $write->send($chunk);
@@ -74,8 +75,9 @@ class UploadFile extends Controller
         }
 
         // Завершение загрузки файла
-        if ($request->endchunk)
+        if ($request->endchunk) {
             $file->save();
+        }
 
         $file->size = parent::formatSize($file->size);
         $file->time = date("d.m.Y H:i:s");
@@ -87,8 +89,9 @@ class UploadFile extends Controller
             \App\Events\Disk::dispatch([
                 'new' => $file,
                 'user' => (int) $file->user,
-                'socketId' => $request->header('X-Socket-Id'),
             ]);
+
+            CreateThumbPhoto::dispatch($file->id);
 
             if (!$request->operation_id) {
                 DiskFilesLog::create([
@@ -112,7 +115,7 @@ class UploadFile extends Controller
             'operation_id' => $request->operation_id,
             'hash' => $file->real_name,
             'path' => $file->path,
-            'size' => Storage::disk('public')->size($dir . "/" . $file->real_name),
+            'size' => Storage::size($dir . "/" . $file->real_name),
             'file' => $request->endchunk ? $file : false,
         ]);
 
@@ -131,12 +134,12 @@ class UploadFile extends Controller
         
         // Проверка повторяющегося имени
         $count = 1;
-		while (Storage::disk('public')->exists("{$dir}/{$file->real_name}")) {
+		while (Storage::exists("{$dir}/{$file->real_name}")) {
             $file->real_name = md5($file->real_name . $count) . "." . $file->ext;
             $count++;
         }
 
-        Storage::disk('public')->put("{$dir}/{$file->real_name}", "");
+        Storage::put("{$dir}/{$file->real_name}", "");
 
         return $file->real_name;
 

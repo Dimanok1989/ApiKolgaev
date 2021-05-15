@@ -29,7 +29,7 @@ class Images extends Controller
      * 
      * @var array
      */
-    protected $mime_types = [
+    public $mime_types = [
         'image/jpeg',
         'image/png',
         'image/gif'
@@ -64,11 +64,18 @@ class Images extends Controller
     protected $onestep = false;
 
     /**
+     * Обработать все изображения
+     * 
+     * @var bool
+     */
+    protected $all = false;
+
+    /**
      * Определение параметров
      * 
      * @param array $options
      */
-    public function __construct($options) {
+    public function __construct($options = []) {
 
         $this->start = microtime(1); // Время запуска скрипта
         $this->last = $this->start; // Время последней операции
@@ -79,6 +86,12 @@ class Images extends Controller
         // Отключение цикла
         $this->onestep = $options['onestep'] ?? $this->onestep;
 
+        // Обработать все изображения
+        $this->all = $options['all'] ?? $this->all;
+
+        if ($this->all)
+            $this->onestep = true;
+
     }
 
     /**
@@ -87,6 +100,9 @@ class Images extends Controller
      * @return array
      */
     public function resize() {
+
+        if ($this->all)
+            return $this->allRows();
 
         $this->resizeFile(); // Поиск и обработка изображений
 
@@ -105,34 +121,46 @@ class Images extends Controller
 
         return null;
 
-        $time = round(microtime(true) - $start, 2);
+    }
 
-        if ($this->echo) {
-            $files = count($data ?? []);
-            echo "\033[1;33m" . "Обработано файлов {$files}\n";
-            echo "\033[0;37m" . "Выполнено за $time сек\n";
-            return null;
-        }
+    /**
+     * Обработка всех изображений
+     * 
+     * @return null
+     */
+    public function allRows() {
 
-        return response([
-            'time' => $time,
-            'count' => $count,
-            'data' => $data ?? [],
-        ]);
+        set_time_limit(0);
+
+        DiskFile::whereIn('mime_type', $this->mime_types)
+        ->where('thumbnail_created', NULL)
+        ->chunk(50, function($rows) {
+            foreach ($rows as $row) {
+                $this->resizeFile($row);
+            }
+        });
+
+        return null;
 
     }
 
     /**
      * Метод создания одной миниатюры
+     * 
+     * @param App\DiskFile $file
      */
-    public function resizeFile() {
+    public function resizeFile($file = false) {
 
-        $files = DiskFile::whereIn('mime_type', $this->mime_types)
-        ->where('thumbnail_created', NULL)
-        ->limit(1)
-        ->get();
+        if (!$file) {
 
-        $file = $files[0] ?? null;
+            $files = DiskFile::whereIn('mime_type', $this->mime_types)
+            ->where('thumbnail_created', NULL)
+            ->limit(1)
+            ->get();
+
+            $file = $files[0] ?? null;
+
+        }
 
         if (!$file) {
             echo date("[Y-m-d H:i:s]") . " Файлов не найдено\n";
@@ -247,6 +275,7 @@ class Images extends Controller
                 'litle' => Storage::disk('public')->url("thumbs/{$litle_dir}/{$litle_name}"),
                 'middle' => "?file={$file->id}&thumb=middle",
             ],
+            'in_dir' => $file->in_dir,
             'user' => (int) $file->user,
         ]);
 

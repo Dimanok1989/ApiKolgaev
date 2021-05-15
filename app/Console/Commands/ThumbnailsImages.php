@@ -11,7 +11,7 @@ class ThumbnailsImages extends Command
      *
      * @var string
      */
-    protected $signature = 'disk:thumbnails {--sleep=4 : Пауза между поиском картинки} {--onestep : Отключение цикла в скрипте}';
+    protected $signature = 'disk:thumbnails {--sleep=4 : Пауза между поиском картинки} {--onestep : Отключение цикла в скрипте} {--all : Обработать все имеющиеся изображения}';
 
     /**
      * The console command description.
