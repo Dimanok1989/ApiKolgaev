@@ -43,17 +43,25 @@ Route::group([
 ], function() {
     Route::post('/getUsersList', 'Disk\MainDataDisk@getUsersList');
     Route::post('/getUserFiles', 'Disk\MainDataDisk@getUserFiles');
+
     Route::post('/uploadFile', 'Disk\UploadFile@upload');
     Route::post('/mkdir', 'Disk\MainDataDisk@mkdir');
     Route::post('/getNameFile', 'Disk\MainDataDisk@getNameFile');
     Route::post('/rename', 'Disk\MainDataDisk@rename');
+
     Route::post('/startDownload', 'Disk\DownloadFile@startDownload');
     Route::post('/download', 'Disk\DownloadFile@download');
     Route::post('/addFileToZip', 'Disk\DownloadFile@addFileToZip');
+    /** Создание архива каталога и его скачивание */
+    Route::post('/downloadFolder', 'Disk\DownloadFolder@downloadFolder');
+
     Route::post('/deleteFile', 'Disk\MainDataDisk@deleteFile');
+
     Route::post('/showImage', 'Disk\MainDataDisk@showImage');
+
     /** Вывод лога на галвную страницу */
     Route::post('/getLogs', 'Disk\Logs@getLogs');
+
 });
 
 // Route::get('/ttttttt', function() {

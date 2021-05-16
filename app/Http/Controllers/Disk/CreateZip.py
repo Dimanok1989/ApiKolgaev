@@ -1,11 +1,18 @@
-import zipfile #подключаем модуль
+import sys, json, zipfile
 
-zipname=r'../../storage/app/drive/temp/bdseoru.zip'
+uid=sys.argv[1]
+tempdir='storage/app/drive/temp/'
 
-try:
-    newzip=zipfile.ZipFile(zipname,'w') #создаем архив
-    print("Архив bdseoru.zip на диске С:/ создан.")
-    newzip.write(zipname, '123/createaip2.py') #добавляем файл 
-    newzip.close() #закрываем архив
-except:
-    print("Что-то пошло не так...")
+with open(tempdir+uid+'.json') as f:
+    file_content = f.read()
+    data = json.loads(file_content)
+
+zipname=tempdir+uid+'.zip'
+
+newzip=zipfile.ZipFile(zipname,'w')
+
+for i in range(len(data)):
+    print(data[i])
+    newzip.write(data[i]['path'], data[i]['file'])
+
+newzip.close()

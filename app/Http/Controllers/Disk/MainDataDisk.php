@@ -26,7 +26,7 @@ class MainDataDisk extends Controller
         ['RAR'],
         ['TXT'],
         ['RTF','DOC','DOCX'],
-        ['XLS','CSV'],
+        ['XLS','XLSX','CSV'],
         ['MP3','WAV','OGG'],
         ['PDF'],
         ['PHP','XML','VUE','SQL'],
@@ -350,6 +350,7 @@ class MainDataDisk extends Controller
         $file->save();
 
         $name = $file->name . ($file->ext ? "." . $file->ext : '');
+        
 
         \App\Events\Disk::dispatch([
             'rename' => $file,
@@ -381,11 +382,10 @@ class MainDataDisk extends Controller
         $file->delete_query = date("Y-m-d H:i:s");
         $file->save();
 
-        \App\Events\Disk::dispatch([
+        broadcast(new \App\Events\Disk([
             'delete' => $file,
             'user' => (int) $file->user,
-            'socketId' => $request->header('X-Socket-Id'),
-        ]);
+        ]))->toOthers();
 
         return response([
             'message' => "Файл перемещен в корзину",

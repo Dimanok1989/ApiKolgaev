@@ -307,6 +307,9 @@ class DownloadFile extends Controller
         if (!$request->user)
             return abort(403);
 
+        if ($request->folder)
+            return DownloadFolder::downloadAndRemove($request);
+
         if (!$file = DiskFile::find($request->file))
             return abort(404);
 
