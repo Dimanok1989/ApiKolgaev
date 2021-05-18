@@ -15,6 +15,13 @@ class CreateFolderArchive implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     /**
+     * Время работы очереди
+     * 
+     * @var int
+     */
+    public $timeout = 0;
+
+    /**
      * Список файлов
      * 
      * @var array
