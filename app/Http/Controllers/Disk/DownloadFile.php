@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\disk;
+namespace App\Http\Controllers\Disk;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
