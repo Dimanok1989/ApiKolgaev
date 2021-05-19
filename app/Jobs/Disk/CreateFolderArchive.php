@@ -55,8 +55,6 @@ class CreateFolderArchive implements ShouldQueue
      */
     public function handle()
     {
-
-        \set_time_limit(0);
         
         $json_file = storage_path("app/drive/temp/{$this->uid}.json");
 
@@ -64,8 +62,9 @@ class CreateFolderArchive implements ShouldQueue
         fwrite($json, json_encode($this->files));
         fclose($json);
 
-        $cmd = "python app/Http/Controllers/Disk/CreateZip.py {$this->uid}";
-        echo $out = shell_exec($cmd);
+        $createZip = app_path('Http/Controllers/Disk/CreateZip.py');
+        $cmd = "python $createZip {$this->uid}";
+        shell_exec($cmd);
 
         if ($process = DiskProcessArchive::where('uid', $this->uid)->get()[0] ?? null) {
 
