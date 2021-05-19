@@ -1,7 +1,7 @@
 import sys, json, zipfile
 
 uid=sys.argv[1]
-tempdir='storage/app/drive/temp/'
+tempdir=sys.argv[2]+'/'
 
 with open(tempdir+uid+'.json') as f:
     file_content = f.read()
