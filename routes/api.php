@@ -59,6 +59,9 @@ Route::group([
 
     Route::post('/showImage', 'Disk\MainDataDisk@showImage');
 
+    /** Скрыть/отобразить файл для общего доступа */
+    Route::post('/hideFile', 'Disk\MainDataDisk@hideFile');
+
     /** Вывод лога на галвную страницу */
     Route::post('/getLogs', 'Disk\Logs@getLogs');
 
@@ -67,7 +70,6 @@ Route::group([
     /** Смена аудио трека */
     Route::post('/playAudioChange', 'Disk\Audio@playAudioChange');
     
-
 });
 
 // Route::get('/ttttttt', function() {

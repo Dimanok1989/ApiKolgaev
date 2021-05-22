@@ -66,6 +66,13 @@ class MainDataDisk extends Controller
      * @var int
      */
     public static $limit = 500 * 1024 * 1024 * 1024;
+
+    /**
+     * Миниатюры для изображений
+     * 
+     * @var array
+     */
+    public static $thumbs = [];
     
     /**
      * Метод получения списка пользователей, доступным файловый менеджер
@@ -164,43 +171,16 @@ class MainDataDisk extends Controller
                 $thumbs[$row->file_id] = $row;
             }
         });
+
+        self::$thumbs = $thumbs;
         
         foreach ($data as $file) {
 
             if ($file->is_dir) {
-
-                $file->size = null;
-                $file->ext = "Папка";
-                $file->icon = "folder";
-
-                $file->time = date("d.m.Y H:i:s", strtotime($file->created_at));
-
-                $dirs[] = $file;
-
+                $dirs[] = self::getFileRowData($file);
             }
             else {
-
-                $time = false;
-
-                $file->size = parent::formatSize($file->size);
-                $file->icon = self::getFileIcon($file);
-
-                if (Storage::disk('public')->exists($file->path . "/" . $file->real_name))
-                    $time = Storage::disk('public')->lastModified($file->path . "/" . $file->real_name);
-
-                // Создание ссылок на миниатюры
-                $thumb = $thumbs[$file->id] ?? null;
-
-                if ($thumb) {
-                    $file->thumb_litle = Storage::disk('public')->url("thumbs/{$thumb->litle}");
-                    $file->thumb_middle = $link . "?file={$file->id}&thumb=middle";
-                }
-
-                $time = $time ?? strtotime($file->created_at);
-                $file->time = date("d.m.Y H:i:s", $time);
-
-                $files[] = $file;
-
+                $files[] = self::getFileRowData($file, $link);
             }
 
         }
@@ -228,6 +208,51 @@ class MainDataDisk extends Controller
             'next' => $data->currentPage() + 1,
             'last' => $data->lastPage(),
         ]);
+
+    }
+
+    /**
+     * Метод формирования данных одного файла
+     * 
+     * @param \App\DiskFile $file
+     * @param string|null $link
+     * @return object $file
+     */
+    public static function getFileRowData($file, $link = null) {
+
+        if ($file->is_dir) {
+
+            $file->size = null;
+            $file->ext = "Папка";
+            $file->icon = "folder";
+
+            $file->time = date("d.m.Y H:i:s", strtotime($file->created_at));
+
+        }
+        else {
+
+            $time = false;
+
+            $file->size = parent::formatSize($file->size);
+            $file->icon = self::getFileIcon($file);
+
+            if (Storage::disk('public')->exists($file->path . "/" . $file->real_name))
+                $time = Storage::disk('public')->lastModified($file->path . "/" . $file->real_name);
+
+            // Создание ссылок на миниатюры
+            $thumb = self::$thumbs[$file->id] ?? null;
+
+            if ($thumb && $link) {
+                $file->thumb_litle = Storage::disk('public')->url("thumbs/{$thumb->litle}");
+                $file->thumb_middle = $link . "?file={$file->id}&thumb=middle";
+            }
+
+            $time = $time ?? strtotime($file->created_at);
+            $file->time = date("d.m.Y H:i:s", $time);
+
+        }
+
+        return $file;
 
     }
 
@@ -351,7 +376,6 @@ class MainDataDisk extends Controller
 
         $name = $file->name . ($file->ext ? "." . $file->ext : '');
         
-
         \App\Events\Disk::dispatch([
             'rename' => $file,
             'user' => (int) $file->user,
@@ -520,6 +544,44 @@ class MainDataDisk extends Controller
         ->get();
 
         return $file[0] ?? false;
+
+    }
+
+    /**
+     * Скрыть/отобразить файл для общего доступа
+     * 
+     * @param Illuminate\Http\Request $request
+     * @return response
+     */
+    public static function hideFile(Request $request) {
+
+        if (!$file = DiskFile::find($request->id))
+            return response(['message' => "Файл не найден"], 400);
+
+        if ($request->user()->id != $file->user)
+            return response(['message' => "Доступ для скрытия этого файла есть только у его владельца"], 403);
+
+        $file->hiden = $file->hiden == 0 || !$file->hiden ? 1 : 0;
+        $file->save();
+
+        DiskFilesThumbnail::where('file_id', $file->id)
+        ->chunk(100, function($rows) {
+            foreach ($rows as $row) {
+                self::$thumbs[$row->file_id] = $row;
+            }
+        });
+
+        $link = env('APP_URL') . "/disk/{$request->user()->remember_token}";
+        $file = self::getFileRowData($file, $link);
+
+        broadcast(new \App\Events\Disk([
+            'hide' => $file,
+            'user' => (int) $file->user,
+        ]))->toOthers();
+
+        return response()->json([
+            'file' => $file,
+        ]);
 
     }
 
