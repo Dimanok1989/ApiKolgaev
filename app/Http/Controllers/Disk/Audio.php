@@ -86,12 +86,12 @@ class Audio extends Controller
      */
     public static function playNextAudio($request) {
 
-        if (!$folder = DiskFile::find($request->folder))
-            return response(['message' => "Ошибка выбранного каталога"], 400);
+        // if (!$folder = DiskFile::find($request->folder))
+        //     return response(['message' => "Ошибка выбранного каталога"], 400);
 
         $count = DiskFile::where([
             ['mime_type', 'LIKE', 'audio/%'],
-            ['in_dir', $folder->id],
+            ['in_dir', $request->folder],
             ['id', '!=', $request->audio]
         ])
         ->count();
