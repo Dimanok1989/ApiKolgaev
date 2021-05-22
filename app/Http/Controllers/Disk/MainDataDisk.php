@@ -149,12 +149,17 @@ class MainDataDisk extends Controller
         $dirs = []; // Список каталогов
         $files = []; // Список файлов
 
-        $data = DiskFile::where([
+        $where = [
             ['user', $request->id],
             ['in_dir', $in_dir],
             ['deleted_at', NULL],
             ['delete_query', NULL],
-        ])
+        ];
+
+        if ($request->id != $request->user()->id)
+            $where[] = ['hiden', 0];
+
+        $data = DiskFile::where($where)
         ->orderBy('is_dir', 'DESC')
         ->orderBy('name')
         ->paginate(72);
