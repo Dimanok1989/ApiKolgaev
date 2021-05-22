@@ -103,7 +103,7 @@ class Audio extends Controller
 
         $file = DiskFile::where([
             ['mime_type', 'LIKE', 'audio/%'],
-            ['in_dir', $folder->id],
+            ['in_dir', $request->folder],
             ['id', '!=', $request->audio]
         ])
         ->offset($offset)
