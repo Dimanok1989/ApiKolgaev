@@ -62,6 +62,12 @@ Route::group([
     /** Вывод лога на галвную страницу */
     Route::post('/getLogs', 'Disk\Logs@getLogs');
 
+    /** Воспроизведение музыкального файла */
+    Route::post('/playAudio', 'Disk\Audio@playAudio');
+    /** Смена аудио трека */
+    Route::post('/playAudioChange', 'Disk\Audio@playAudioChange');
+    
+
 });
 
 // Route::get('/ttttttt', function() {

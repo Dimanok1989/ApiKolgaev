@@ -22,6 +22,8 @@ Route::get('/', function () {
 Route::get('/disk/{token}', 'Disk\DownloadFile@getFileFromLink');
 Route::get('/download/{file_name}', 'Disk\DownloadFile@downloadFile');
 
+Route::get('/play/audio', 'Disk\Audio@getFile')->name('play.audio');
+
 // Route::get('/react', function () {
 
 //     return view('react');
