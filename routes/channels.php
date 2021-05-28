@@ -31,6 +31,24 @@ Broadcast::channel('App.Disk', function ($user) {
 
 });
 
+/** Канал присутствия Диска */
+Broadcast::channel('App.Disk.Chat', function ($user) {
+
+    if ($user->can('disk')) {
+        return [
+            'id' => $user->id,
+            'email' => $user->email,
+            'name' => $user->name,
+            'surname' => $user->surname,
+            'patronymic' => $user->patronymic,
+            'login' => $user->login,
+        ];
+    }
+
+    return false;
+
+});
+
 /** Канал присутствия Основного сайта */
 Broadcast::channel('App.Main', function ($user) {
 

@@ -69,7 +69,12 @@ Route::group([
     Route::post('/playAudio', 'Disk\Audio@playAudio');
     /** Смена аудио трека */
     Route::post('/playAudioChange', 'Disk\Audio@playAudioChange');
-    
+
+    /** Отправка сообщения в чат */
+    Route::post('/sendMessage', 'Disk\Chats@sendMessage');
+    /** Отправка сообщения в чат */
+    Route::post('/getMessages', 'Disk\Chats@getMessages');
+
 });
 
 // Route::get('/ttttttt', function() {
