@@ -72,7 +72,7 @@ class Chats extends Controller
         $data = ChatMessage::select(
             'chat_messages.*',
             'users.name as _name',
-            'users.surname as _surname',
+            'users.surname as _surname'
         )
         ->leftjoin('users', 'users.id', '=', 'chat_messages.user_id')
         ->orderBy('id', 'DESC')
