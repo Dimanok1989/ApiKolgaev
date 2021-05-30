@@ -149,6 +149,12 @@ class MainDataDisk extends Controller
         $dirs = []; // Список каталогов
         $files = []; // Список файлов
 
+        if ($request->id != $request->user()->id) {
+            if (self::checkHidenDir($in_dir)) {
+                return response(['message' => "Этот каталог находится внутри скрытого от общего доступа каталога"], 400);
+            }
+        }
+
         $where = [
             ['user', $request->id],
             ['in_dir', $in_dir],
@@ -213,6 +219,26 @@ class MainDataDisk extends Controller
             'next' => $data->currentPage() + 1,
             'last' => $data->lastPage(),
         ]);
+
+    }
+
+    /**
+     * Проверка принадлежности к скрытому каталогу
+     * 
+     * @param int $in_dir
+     * @return bool
+     */
+    public static function checkHidenDir(int $in_dir) : bool {
+
+        if ($in_dir == 0)
+            return false;
+
+        $dir = DiskFile::find($in_dir);
+
+        if ($dir->hiden == 1)
+            return true;
+
+        return self::checkHidenDir($dir->in_dir);
 
     }
 
@@ -444,6 +470,9 @@ class MainDataDisk extends Controller
 
         if (!$file = $files[0] ?? null)
             return response(['message' => "Фото не найдено, возможно его уже удалили"], 400);
+        
+        if (preg_match('/video\/*/', $file->mime_type))
+            return self::showVideo($request, $file);
 
         $thumbs = DiskFilesThumbnail::where('file_id', $file->id)->get();
 
@@ -467,14 +496,19 @@ class MainDataDisk extends Controller
     public static function getStepImage($request) {
 
         DiskFile::select(
-            'disk_files.*'
+            'disk_files.*',
+            'disk_files_thumbnails.id as tumb_id'
         )
+        ->leftjoin('disk_files_thumbnails', 'disk_files_thumbnails.file_id', '=', 'disk_files.id')
         ->where([
             ['is_dir', 0],
             ['in_dir', (int) $request->folder],
             ['delete_query', NULL],
         ])
-        ->join('disk_files_thumbnails', 'disk_files_thumbnails.file_id', '=', 'disk_files.id')
+        ->where(function($query) {
+            $query->where('disk_files_thumbnails.id', '!=', null)
+                ->orWhere('mime_type', 'LIKE', "video/%");
+        })
         ->orderBy('name')
         ->chunk(100, function ($rows) use (&$request) {
 
@@ -520,6 +554,9 @@ class MainDataDisk extends Controller
         if (!$request->file)
             return response(['message' => "Фотокарточка не найдена"], 400);
 
+        if (preg_match('/video\/*/', $request->file->mime_type))
+            return self::showVideo($request, $request->file);
+
         return response([
             'link' => env('APP_URL') . "/disk/{$request->user()->remember_token}?file={$request->file->id}&thumb=middle",
             'name' => $request->file->name,
@@ -536,19 +573,42 @@ class MainDataDisk extends Controller
      */
     public static function showImageEndSteps($request) {
 
-        $file = DiskFile::select('disk_files.*')
+        $file = DiskFile::select(
+            'disk_files.*',
+            'disk_files_thumbnails.id as tumb_id'
+        )
+        ->leftjoin('disk_files_thumbnails', 'disk_files_thumbnails.file_id', '=', 'disk_files.id')
         ->where([
             ['is_dir', 0],
             ['in_dir', (int) $request->folder],
-            ['deleted_at', NULL],
             ['delete_query', NULL],
         ])
-        ->join('disk_files_thumbnails', 'disk_files_thumbnails.file_id', '=', 'disk_files.id')
-        ->limit(1)
+        ->where(function($query) {
+            $query->where('disk_files_thumbnails.id', '!=', null)
+                ->orWhere('mime_type', 'LIKE', "video/%");
+        })
         ->orderBy('name', 'DESC')
+        ->limit(1)
         ->get();
 
         return $file[0] ?? false;
+
+    }
+
+    /**
+     * Метод вывода информации для просмотра видео
+     * 
+     * @param Iluminate\Http\Request $request
+     * @param App\Models\DiskFile $file
+     * @return response
+     */
+    public static function showVideo($request, $file) {
+
+        return response()->json([
+            'id' => $file->id,
+            'name' => $file->name,
+            'video' => env('APP_URL') . "/disk/{$request->user()->remember_token}?file={$file->id}",
+        ]);
 
     }
 
