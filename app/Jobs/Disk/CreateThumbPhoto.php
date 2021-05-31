@@ -41,10 +41,20 @@ class CreateThumbPhoto implements ShouldQueue
     public function handle()
     {
         
-        $thumb = new \App\Http\Controllers\Disk\Images;
+        if (preg_match('/image\/*/', $this->file->mime_type)) {
 
-        if (in_array($this->file->mime_type, $thumb->mime_types)) {
-            $thumb->resizeFile($this->file, true);
+            $thumb = new \App\Http\Controllers\Disk\Images;
+
+            if (in_array($this->file->mime_type, $thumb->mime_types)) {
+                $thumb->resizeFile($this->file, true);
+            }
+
+        }
+        else if (preg_match('/video\/*/', $this->file->mime_type)) {
+
+            $thumb = new \App\Http\Controllers\Disk\VideoConverter;
+            $thumb->createPoster($this->file);
+
         }
 
     }

@@ -77,6 +77,8 @@ Route::group([
 
 });
 
+Route::get('/cv', 'Disk\VideoConverter@createPoster');
+
 // Route::get('/ttttttt', function() {
 //     echo \Crypt::encryptString('123');
 //     \App\Events\DiskOnline::dispatch([123, 456]);

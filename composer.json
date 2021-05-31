@@ -21,6 +21,7 @@
         "laravel/ui": "^2.0",
         "maennchen/zipstream-php": "^2.1",
         "nelexa/zip": "^3.3",
+        "php-ffmpeg/php-ffmpeg": "^0.18.0",
         "phpoffice/phpexcel": "^1.8",
         "phpoffice/phpword": "^0.17.0",
         "predis/predis": "^1.1",

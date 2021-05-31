@@ -192,8 +192,8 @@ class Images extends Controller
         $litle_dir = date("Y/m/d/H");
 
         // Проверка и создание каталога
-        if (!Storage::exists("{$litle_dir_prefix}/{$middle_dir}"))
-            Storage::makeDirectory("{$litle_dir_prefix}/{$middle_dir}");
+        if (!Storage::exists("{$litle_dir_prefix}/{$litle_dir}"))
+            Storage::makeDirectory("{$litle_dir_prefix}/{$litle_dir}");
 
         // Проверка наличия миниатюры с именем
         $litle_name = md5($file->real_name . $this->litle) . "." . $file->ext; // Имя файла

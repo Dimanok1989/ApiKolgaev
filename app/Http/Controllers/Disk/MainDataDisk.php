@@ -21,7 +21,7 @@ class MainDataDisk extends Controller
      */
     public static $exts = [
         ['JPG','JPEG','SVG','PNG','BMP'],
-        ['MOV','AVI','MP4','WEBM','MKV','M4V'],
+        ['MOV','AVI','MP4','WEBM','MKV','M4V','M2T'],
         ['ZIP','XZ','BZ2'],
         ['RAR'],
         ['TXT'],
