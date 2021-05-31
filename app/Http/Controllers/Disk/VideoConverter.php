@@ -120,7 +120,7 @@ class VideoConverter extends Controller
             Storage::makeDirectory("{$middle_dir_prefix}/{$middle_dir}");
 
         // Проверка наличия файла с именем
-        $middle_name = md5($file->real_name . $file->id) . "middle.jpg"; // Имя файла
+        $middle_name = md5($file->real_name . $file->id . "middle") . ".jpg"; // Имя файла
         $count = 1;
 
         while (Storage::disk('public')->exists("{$middle_dir_prefix}/{$middle_dir}/{$middle_name}")) {
