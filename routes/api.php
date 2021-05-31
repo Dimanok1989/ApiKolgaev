@@ -77,7 +77,10 @@ Route::group([
 
 });
 
-Route::get('/cv', 'Disk\VideoConverter@createPoster');
+Route::get('/cv', function() {
+    $c = new \App\Http\Controllers\Disk\VideoConverter;
+    return $c->createPoster(\App\Models\Disk\DiskFile::find(695));
+});
 
 // Route::get('/ttttttt', function() {
 //     echo \Crypt::encryptString('123');

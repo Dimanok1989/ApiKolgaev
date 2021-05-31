@@ -161,8 +161,9 @@ class VideoConverter extends Controller
         ]);
 
         $video = $ffmpeg->open($file_path);
+        $duration = (float) $video->getFFProbe()->streams($file_path)->videos()->first()->get('duration');
 
-        $video->frame(\FFMpeg\Coordinate\TimeCode::fromSeconds(3))
+        $video->frame(\FFMpeg\Coordinate\TimeCode::fromSeconds($duration > 3 ? 3 : $duration / 2))
             ->save("{$middle_path}/{$middle_name}");
 
         echo "MIDDLE {$middle_path}/{$middle_name}\n";
