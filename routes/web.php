@@ -24,6 +24,9 @@ Route::get('/download/{file_name}', 'Disk\DownloadFile@downloadFile');
 
 Route::get('/play/audio', 'Disk\Audio@getFile')->name('play.audio');
 
+/** Чтение сообщений телеграм-бота */
+Route::match(['post','get'], '/tlgWebhook', 'Telegram\Telegram@webhook');
+
 // Route::get('/react', function () {
 
 //     return view('react');
